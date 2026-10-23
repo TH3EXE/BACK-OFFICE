@@ -122,6 +122,14 @@
           <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-black border border-bat-border rounded p-2.5 text-zinc-100 focus:border-bat-yellow">
         </div>
 
+        <div>
+          <label class="block text-zinc-400 mb-1">BASE DE DADOS DE TRABALHO</label>
+          <select id="loginBaseSelect" required class="w-full bg-black border border-bat-yellow text-bat-yellow font-bold rounded p-2.5 focus:border-bat-yellow bat-glow">
+            <option value="CAC">CÉLULA CAC</option>
+            <option value="NOVO_FORMATO">CÉLULA NOVO FORMATO</option>
+          </select>
+        </div>
+
         <div id="loginErrorMsg" class="hidden text-bat-red text-center text-xs font-bold bg-bat-red/10 border border-bat-red/30 py-1.5 rounded">
           Senha incorreta para o operador selecionado.
         </div>
@@ -151,7 +159,7 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="font-orbitron font-extrabold text-lg text-bat-yellow tracking-wider">BLACK TREVAS</h1>
-          <span class="text-xs px-2 py-0.5 rounded bg-black text-bat-yellow border border-bat-yellow/40 font-mono">v9.1 PRO TOOLS</span>
+          <span class="text-xs px-2 py-0.5 rounded bg-black text-bat-yellow border border-bat-yellow/40 font-mono">v9.2 MULTI-BASE</span>
         </div>
         <p class="text-xs text-zinc-400 tracking-wider uppercase font-mono">Acompanhamento &amp; Gestão Isolada de Fila</p>
       </div>
@@ -178,8 +186,14 @@
       <span id="tacticalClockDisplay">--/--/---- // --:--:--</span>
     </div>
 
-    <!-- STATUS OPERADOR E SELEÇÃO DE TEMA -->
+    <!-- STATUS OPERADOR, BASE E SELEÇÃO DE TEMA -->
     <div class="hidden lg:flex items-center gap-3 text-xs font-mono">
+      <div class="flex items-center gap-1.5 bg-black px-2 py-1 rounded border border-bat-border">
+        <i data-lucide="database" class="w-3.5 h-3.5 text-bat-yellow"></i>
+        <span class="text-zinc-400">BASE:</span>
+        <span id="headerCurrentBase" class="text-bat-yellow font-bold uppercase">CAC</span>
+      </div>
+
       <div class="flex items-center gap-1.5 bg-black px-2 py-1 rounded border border-bat-border">
         <i data-lucide="palette" class="w-3.5 h-3.5 text-bat-yellow"></i>
         <select id="themeSelector" onchange="changeSystemTheme(this.value)" class="bg-transparent text-zinc-300 text-xs focus:outline-none cursor-pointer">
@@ -208,12 +222,12 @@
         <span>MELHORAR IMAGEM</span>
       </button>
 
-      <button onclick="exportOperatorBackup()" title="Exportar backup JSON" class="px-2.5 py-1.5 bg-black hover:bg-bat-yellow/20 text-bat-yellow border border-bat-yellow/40 rounded text-xs font-mono transition flex items-center gap-1.5">
+      <button onclick="exportOperatorBackup()" title="Exportar backup JSON" class="px-2.5 py-1.5 bg-black hover:bg-bat-yellow/20 text-bat-yellow border border-bat-yellow/40 rounded text-xs font-mono transition flex items-center gap-1">
         <i data-lucide="download" class="w-3.5 h-3.5"></i>
         <span class="hidden sm:inline">EXPORTAR JSON</span>
       </button>
 
-      <button onclick="triggerImportBackup()" title="Importar backup JSON" class="px-2.5 py-1.5 bg-black hover:bg-bat-cyan/20 text-bat-cyan border border-bat-cyan/40 rounded text-xs font-mono transition flex items-center gap-1.5">
+      <button onclick="triggerImportBackup()" title="Importar backup JSON" class="px-2.5 py-1.5 bg-black hover:bg-bat-cyan/20 text-bat-cyan border border-bat-cyan/40 rounded text-xs font-mono transition flex items-center gap-1">
         <i data-lucide="upload" class="w-3.5 h-3.5"></i>
         <span class="hidden sm:inline">IMPORTAR JSON</span>
       </button>
@@ -617,7 +631,7 @@
         <p style="font-size: 11px; color: #555;">SISTEMA BLACK TREVAS BACKOFFICE - EMISSÃO EM <span id="printDate"></span></p>
       </div>
       <div style="text-align: right; font-size: 11px;">
-        <b>OPERADOR:</b> <span id="printOperator"></span>
+        <b>BASE:</b> <span id="printBase"></span> | <b>OPERADOR:</b> <span id="printOperator"></span>
       </div>
     </div>
 
@@ -1034,17 +1048,19 @@
     </div>
   </div>
 
-  <!-- MODAL REGISTRAR ITEM NA SUB-ABA -->
+  <!-- MODAL REGISTRAR OU EDITAR ITEM NA SUB-ABA (CONSULTA, EXAME, GUIA) -->
   <div id="addProcedureModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
     <div class="bg-bat-card border border-bat-border rounded-lg w-full max-w-xl p-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-bat-border pb-2 mb-3">
-        <h3 class="font-orbitron text-xs font-bold text-bat-yellow flex items-center gap-2">
+        <h3 id="procedureModalTitle" class="font-orbitron text-xs font-bold text-bat-yellow flex items-center gap-2">
           <i data-lucide="file-plus" class="w-4 h-4"></i> REGISTRAR ITEM / DETALHAMENTO DA ABA
         </h3>
         <button onclick="closeModal('addProcedureModal')" class="text-zinc-400 hover:text-white">&times;</button>
       </div>
 
       <form id="procedureForm" onsubmit="saveProcedure(event)" class="grid grid-cols-2 gap-3 font-mono text-xs">
+        <input type="hidden" id="editProcedureId" value="">
+
         <div class="col-span-2">
           <label class="block text-zinc-400 mb-1">SUB-ABA DE DESTINO</label>
           <select id="procCategory" class="w-full bg-black border border-bat-border rounded p-2 text-zinc-200 focus:border-bat-yellow">
@@ -1060,13 +1076,14 @@
         </div>
 
         <div>
-          <label class="block text-zinc-400 mb-1">STATUS</label>
-          <select id="procStatus" class="w-full bg-black border border-bat-border rounded p-2 text-zinc-200 focus:border-bat-yellow">
-            <option value="SOLICITADO">SOLICITADO</option>
-            <option value="AGUARD. SENHA">AGUARD. SENHA</option>
-            <option value="AUTORIZADO / SENHA LIBERADA">AUTORIZADO / SENHA LIBERADA</option>
-            <option value="EFETIVADO">EFETIVADO</option>
-            <option value="CANCELADO">CANCELADO</option>
+          <label class="block text-zinc-400 mb-1">STATUS DO PROCEDIMENTO</label>
+          <select id="procStatus" class="w-full bg-black border border-bat-border rounded p-2 text-zinc-200 focus:border-bat-yellow font-bold">
+            <option value="SOLICITADO" class="text-zinc-300">🔵 SOLICITADO / PENDENTE</option>
+            <option value="AGUARD. SENHA" class="text-amber-400">🟡 AGUARDANDO SENHA</option>
+            <option value="AUTORIZADO / SENHA LIBERADA" class="text-cyan-400">🔵 AUTORIZADO / LIBERADO</option>
+            <option value="EFETIVADO" class="text-emerald-400">🟢 EFETIVADA / REALIZADA</option>
+            <option value="CANCELADO" class="text-rose-500">🔴 CANCELADA</option>
+            <option value="AUSENCIA" class="text-amber-300">🟡 AUSÊNCIA / NÃO COMPARECEU</option>
           </select>
         </div>
 
@@ -1102,7 +1119,7 @@
 
         <div class="col-span-2 flex justify-end gap-2 pt-2 border-t border-bat-border">
           <button type="button" onclick="closeModal('addProcedureModal')" class="px-3 py-1.5 bg-black border border-bat-border rounded text-zinc-400 hover:text-white">CANCELAR</button>
-          <button type="submit" class="px-4 py-1.5 bg-bat-yellow text-black font-bold rounded hover:bg-bat-yellowGlow">REGISTRAR ITEM</button>
+          <button type="submit" class="px-4 py-1.5 bg-bat-yellow text-black font-bold rounded hover:bg-bat-yellowGlow">SALVAR REGISTRO</button>
         </div>
       </form>
     </div>
@@ -1112,6 +1129,7 @@
   <script>
     const DEFAULT_OPERATORS = [
       { name: "BATMAN", pass: "1234" },
+      { name: "RONNEY", pass: "1234" },
     ];
 
     const BRAZIL_CITIES = [
@@ -1175,7 +1193,7 @@
             local: "HOSP. SALVALUS",
             endereco: "RUA ALAMEDA DAS FLORES, 123 - SP",
             protocolo: "PROT-8820",
-            status: "SOLICITADO"
+            status: "EFETIVADO"
           }
         ],
         exames: [
@@ -1244,6 +1262,7 @@
     };
 
     let currentOperator = null;
+    let currentBase = 'CAC';
     let patients = [];
     let operatorLogs = [];
     let selectedPatientId = null;
@@ -1264,8 +1283,10 @@
       startTacticalClock();
 
       const savedOp = sessionStorage.getItem('bt_active_operator');
-      if (savedOp) {
+      const savedBase = sessionStorage.getItem('bt_active_base');
+      if (savedOp && savedBase) {
         currentOperator = savedOp;
+        currentBase = savedBase;
         document.getElementById('loginScreen').classList.add('hidden');
         loadOperatorData();
         initDashboard();
@@ -1480,6 +1501,7 @@
       if (!patient) return alert('Selecione um paciente primeiro.');
 
       document.getElementById('printDate').innerText = new Date().toLocaleString('pt-BR');
+      document.getElementById('printBase').innerText = currentBase.replace('_', ' ');
       document.getElementById('printOperator').innerText = currentOperator;
       document.getElementById('printPatientName').innerText = patient.nome;
       document.getElementById('printPatientCard').innerText = patient.carteirinha;
@@ -1518,6 +1540,8 @@
       const item = items.find(i => i.id === procId);
       if (!item) return;
 
+      document.getElementById('editProcedureId').value = '';
+      document.getElementById('procedureModalTitle').innerHTML = `<i data-lucide="file-plus" class="w-4 h-4"></i> REGISTRAR NOVO ITEM (CLONADO)`;
       document.getElementById('procCategory').value = activeTab;
       document.getElementById('procData').value = new Date().toISOString().slice(0, 10);
       document.getElementById('procSolicitacao').value = `${item.solicitacao} (CÓPIA)`;
@@ -1528,7 +1552,38 @@
       document.getElementById('procProtocolo').value = '';
       document.getElementById('procStatus').value = 'SOLICITADO';
 
-      openAddProcedureModal();
+      document.getElementById('addProcedureModal').classList.remove('hidden');
+    }
+
+    // EDITAR PROCEDIMENTO EXISTENTE
+    function editProcedure(procId) {
+      const patient = patients.find(p => p.id === selectedPatientId);
+      if (!patient) return;
+
+      const items = patient[activeTab] || [];
+      const item = items.find(i => i.id === procId);
+      if (!item) return;
+
+      document.getElementById('editProcedureId').value = item.id;
+      document.getElementById('procedureModalTitle').innerHTML = `<i data-lucide="edit-3" class="w-4 h-4"></i> EDITAR REGISTRO / STATUS DA ABA`;
+      document.getElementById('procCategory').value = activeTab;
+      
+      // Converter data PT-BR para ISO se necessário
+      let isoDate = new Date().toISOString().slice(0, 10);
+      if (item.data && item.data.includes('/')) {
+        const parts = item.data.split('/');
+        if (parts.length === 3) isoDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+      document.getElementById('procData').value = isoDate;
+      document.getElementById('procSolicitacao').value = item.solicitacao || '';
+      document.getElementById('procMedico').value = item.medico || '';
+      document.getElementById('procEspecialidade').value = item.especialidade || '';
+      document.getElementById('procLocal').value = item.local || '';
+      document.getElementById('procEndereco').value = item.endereco || '';
+      document.getElementById('procProtocolo').value = item.protocolo || '';
+      document.getElementById('procStatus').value = item.status || 'SOLICITADO';
+
+      document.getElementById('addProcedureModal').classList.remove('hidden');
     }
 
     function toggleQueueViewMode() {
@@ -1566,7 +1621,7 @@
       if (!patient) return alert('Nenhum paciente selecionado!');
 
       const text = `
-=== FICHA DE BENEFICIÁRIO // BLACK TREVAS ===
+=== FICHA DE BENEFICIÁRIO // BLACK TREVAS (${currentBase.replace('_', ' ')}) ===
 NOME: ${patient.nome}
 CARTEIRINHA: ${patient.carteirinha}
 OPERADORA: ${patient.operadora || 'NDI SP/RJ'}
@@ -1718,38 +1773,872 @@ OPERADOR RESPONSÁVEL: ${currentOperator}
         const tagObj = AVAILABLE_TAGS.find(t => t.id === tagId);
         if (tagObj) {
           const span = document.createElement('span');
-          span.className = `px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${tagObj.color}`;
+          span.className = `px-2 py-0.5 rounded text-[10px] font-bold border ${tagObj.color}`;
           span.innerText = tagObj.label;
           container.appendChild(span);
         }
       });
     }
 
+    // AUTENTICAÇÃO E OPERADORES
+    function getStoredOperators() {
+      const stored = localStorage.getItem('bt_operators_list');
+      if (stored) return JSON.parse(stored);
+      localStorage.setItem('bt_operators_list', JSON.stringify(DEFAULT_OPERATORS));
+      return DEFAULT_OPERATORS;
+    }
+
+    function populateOperatorDropdown() {
+      const select = document.getElementById('loginOperatorSelect');
+      const operators = getStoredOperators();
+      select.innerHTML = '';
+      operators.forEach(op => {
+        const opt = document.createElement('option');
+        opt.value = op.name;
+        opt.innerText = op.name.toUpperCase();
+        select.appendChild(opt);
+      });
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const selectedName = document.getElementById('loginOperatorSelect').value;
+      const selectedBase = document.getElementById('loginBaseSelect').value;
+      const pass = document.getElementById('loginPassword').value;
+      const operators = getStoredOperators();
+
+      const matched = operators.find(op => op.name === selectedName && op.pass === pass);
+      if (matched) {
+        currentOperator = matched.name;
+        currentBase = selectedBase;
+        sessionStorage.setItem('bt_active_operator', currentOperator);
+        sessionStorage.setItem('bt_active_base', currentBase);
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('loginErrorMsg').classList.add('hidden');
+        loadOperatorData();
+        initDashboard();
+        addLog(`Operador ${currentOperator} acessou a base [${currentBase.replace('_', ' ')}].`);
+      } else {
+        document.getElementById('loginErrorMsg').classList.remove('hidden');
+      }
+    }
+
+    function openNewOperatorModal() {
+      document.getElementById('newOpName').value = '';
+      document.getElementById('newOpPassword').value = '';
+      document.getElementById('newOperatorModal').classList.remove('hidden');
+    }
+
+    function saveNewOperator(e) {
+      e.preventDefault();
+      const name = document.getElementById('newOpName').value.trim().toUpperCase();
+      const pass = document.getElementById('newOpPassword').value.trim();
+
+      if (!name || !pass) return alert('Preencha nome e senha.');
+
+      const operators = getStoredOperators();
+      if (operators.some(op => op.name === name)) {
+        return alert('Operador já cadastrado.');
+      }
+
+      operators.push({ name, pass });
+      localStorage.setItem('bt_operators_list', JSON.stringify(operators));
+      populateOperatorDropdown();
+      closeModal('newOperatorModal');
+      alert(`Operador ${name} cadastrado com sucesso!`);
+    }
+
+    function logoutOperator() {
+      if (confirm('Deseja realmente encerrar a sessão?')) {
+        sessionStorage.removeItem('bt_active_operator');
+        sessionStorage.removeItem('bt_active_base');
+        location.reload();
+      }
+    }
+
+    // CARREGAR E SALVAR DADOS DO OPERADOR E DA BASE ISOLADA
+    function getOperatorKey(key) {
+      return `bt_data_${currentOperator}_${currentBase}_${key}`;
+    }
+
+    function loadOperatorData() {
+      const rawPatients = localStorage.getItem(getOperatorKey('patients'));
+      if (rawPatients) {
+        patients = JSON.parse(rawPatients);
+      } else {
+        patients = JSON.parse(JSON.stringify(DEMO_PATIENTS));
+        saveOperatorData();
+      }
+
+      const rawLogs = localStorage.getItem(getOperatorKey('logs'));
+      operatorLogs = rawLogs ? JSON.parse(rawLogs) : [];
+    }
+
+    function saveOperatorData() {
+      if (!currentOperator || !currentBase) return;
+      localStorage.setItem(getOperatorKey('patients'), JSON.stringify(patients));
+      localStorage.setItem(getOperatorKey('logs'), JSON.stringify(operatorLogs));
+      updateKpis();
+    }
+
+    function initDashboard() {
+      document.getElementById('headerCurrentOperator').innerText = currentOperator;
+      document.getElementById('headerCurrentBase').innerText = currentBase.replace('_', ' ');
+      renderQueue();
+      if (patients.length > 0) {
+        selectPatient(patients[0].id);
+      } else {
+        clearPatientDetails();
+      }
+      updateKpis();
+      startReminderMonitor();
+    }
+
     function updateKpis() {
       const todayStr = new Date().toLocaleDateString('pt-BR');
-      let todayContacts = 0;
-      let todayDone = 0;
+      let todayContactsCount = 0;
+      let todayDoneCount = 0;
 
       patients.forEach(p => {
-        if (p.historico) {
-          p.historico.forEach(h => {
-            if (h.data && h.data.startsWith(todayStr)) {
-              todayContacts++;
-            }
-          });
-        }
-        if (p.statusBackoffice === 'CONCLUÍDO') {
-          todayDone++;
-        }
+        if (p.statusBackoffice === 'CONCLUÍDO') todayDoneCount++;
+        (p.historico || []).forEach(h => {
+          if (h.data && h.data.includes(todayStr) && h.operador !== 'SYSTEM') {
+            todayContactsCount++;
+          }
+        });
       });
 
-      document.getElementById('kpiTodayContacts').innerText = todayContacts;
-      document.getElementById('kpiTodayDone').innerText = todayDone;
+      document.getElementById('kpiTodayContacts').innerText = todayContactsCount;
+      document.getElementById('kpiTodayDone').innerText = todayDoneCount;
+    }
+
+    function addLog(detalhe) {
+      const logEntry = {
+        data: new Date().toLocaleString('pt-BR'),
+        operador: currentOperator,
+        detalhe: detalhe
+      };
+      operatorLogs.unshift(logEntry);
+      saveOperatorData();
+    }
+
+    // FILA DE PACIENTES
+    function renderQueue() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const opFilter = document.getElementById('operatorFilter').value;
+      const statusFilter = document.getElementById('statusFilter').value;
+
+      const filtered = patients.filter(p => {
+        const matchSearch = p.nome.toLowerCase().includes(search) || 
+                            p.carteirinha.toLowerCase().includes(search) ||
+                            (p.consultas && p.consultas.some(c => (c.protocolo||'').toLowerCase().includes(search))) ||
+                            (p.exames && p.exames.some(e => (e.protocolo||'').toLowerCase().includes(search))) ||
+                            (p.guias && p.guias.some(g => (g.protocolo||'').toLowerCase().includes(search)));
+
+        const matchOp = opFilter === 'TODAS' || p.operadora === opFilter;
+        const matchStatus = statusFilter === 'TODOS' || p.statusBackoffice.includes(statusFilter);
+        const matchUnsuccessful = !filterOnlyUnsuccessful || p.statusBackoffice === 'INSUCESSO DE CONTATO';
+
+        return matchSearch && matchOp && matchStatus && matchUnsuccessful;
+      });
+
+      document.getElementById('totalCasesCount').innerText = patients.length;
+      document.getElementById('openCasesCount').innerText = patients.filter(p => p.statusBackoffice !== 'CONCLUÍDO').length;
+
+      if (isKanbanView) {
+        renderKanbanQueue(filtered);
+      } else {
+        renderTableQueue(filtered);
+      }
+    }
+
+    function renderTableQueue(list) {
+      const tbody = document.getElementById('queueTableBody');
+      tbody.innerHTML = '';
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-zinc-500 italic">Nenhum caso encontrado nesta base.</td></tr>`;
+        return;
+      }
+
+      list.forEach(p => {
+        const isSelected = p.id === selectedPatientId;
+        const tr = document.createElement('tr');
+        tr.className = `cursor-pointer transition border-b border-bat-border/30 hover:bg-bat-yellow/10 ${isSelected ? 'bg-bat-yellow/20 font-bold border-l-4 border-l-bat-yellow' : ''}`;
+        tr.onclick = () => selectPatient(p.id);
+
+        const sla = calculatePatientSla(p);
+        let slaBadgeClass = 'bg-zinc-800 text-zinc-300';
+        if (sla.status === 'expired') slaBadgeClass = 'bg-bat-red/20 text-bat-red border border-bat-red/40';
+        if (sla.status === 'warning') slaBadgeClass = 'bg-bat-yellow/20 text-bat-yellow border border-bat-yellow/40';
+        if (sla.status === 'success') slaBadgeClass = 'bg-bat-green/20 text-bat-green border border-bat-green/40';
+
+        tr.innerHTML = `
+          <td class="p-2">
+            <div class="text-zinc-100 font-bold truncate max-w-[180px]">${p.nome}</div>
+            <div class="text-[10px] text-zinc-400 font-mono">${p.carteirinha} // <span class="text-bat-cyan">${p.operadora || 'NDI'}</span></div>
+          </td>
+          <td class="p-2 text-right">
+            <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-mono font-bold mb-1 bg-black border border-bat-border text-bat-yellow">${p.statusBackoffice}</span>
+            <div><span class="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold ${slaBadgeClass}">${sla.text}</span></div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderKanbanQueue(list) {
+      const kanban = document.getElementById('queueKanbanView');
+      kanban.innerHTML = '';
+
+      if (list.length === 0) {
+        kanban.innerHTML = `<div class="col-span-2 p-4 text-center text-zinc-500 italic">Nenhum caso na fila desta base.</div>`;
+        return;
+      }
+
+      list.forEach(p => {
+        const isSelected = p.id === selectedPatientId;
+        const card = document.createElement('div');
+        card.className = `p-2.5 rounded bg-black/80 border cursor-pointer transition ${isSelected ? 'border-bat-yellow bat-glow' : 'border-bat-border hover:border-zinc-500'}`;
+        card.onclick = () => selectPatient(p.id);
+
+        const sla = calculatePatientSla(p);
+
+        card.innerHTML = `
+          <div class="flex justify-between items-start mb-1">
+            <span class="text-bat-yellow font-bold truncate max-w-[140px]">${p.nome}</span>
+            <span class="text-[9px] px-1 bg-bat-yellow/10 text-bat-yellow rounded border border-bat-yellow/30">${p.statusBackoffice}</span>
+          </div>
+          <div class="text-[10px] text-zinc-400 font-mono mb-1">Carteirinha: ${p.carteirinha}</div>
+          <div class="flex justify-between items-center text-[9px]">
+            <span class="text-bat-cyan font-bold">${p.operadora || 'NDI'}</span>
+            <span class="text-zinc-400 font-mono">SLA: ${sla.text}</span>
+          </div>
+        `;
+        kanban.appendChild(card);
+      });
+    }
+
+    // SELECIONAR E RENDERIZAR DETALHES DO PACIENTE
+    function selectPatient(id) {
+      selectedPatientId = id;
+      renderQueue();
+      renderPatientDetails();
+    }
+
+    function renderPatientDetails() {
+      const p = patients.find(item => item.id === selectedPatientId);
+      if (!p) {
+        clearPatientDetails();
+        return;
+      }
+
+      document.getElementById('displayCarteirinha').innerText = p.carteirinha;
+      document.getElementById('displayName').innerText = p.nome;
+      document.getElementById('displayFilial').innerText = p.filial || p.cidade || '---';
+      document.getElementById('displayOperadora').innerText = p.operadora || 'NDI SP/RJ';
+      document.getElementById('displayPlano').innerText = p.plano || '---';
+      document.getElementById('displayStatusUsuario').innerText = p.statusUsuario || 'ATIVO';
+      document.getElementById('displayOperador').innerText = p.operador || currentOperator;
+      document.getElementById('badgeCurrentStatus').innerText = p.statusBackoffice;
+      document.getElementById('changeStatusSelect').value = p.statusBackoffice;
+
+      // ATUALIZAR CONTADORES DAS SUB-ABAS
+      document.getElementById('countConsultas').innerText = (p.consultas || []).length;
+      document.getElementById('countExames').innerText = (p.exames || []).length;
+      document.getElementById('countGuias').innerText = (p.guias || []).length;
+
+      // SLA
+      const sla = calculatePatientSla(p);
+      const slaEl = document.getElementById('displaySlaTimer');
+      slaEl.innerText = sla.text;
+
+      renderPatientTags(p);
+      renderTabContent();
+      renderHistoryLog();
+      renderRemindersList();
+      lucide.createIcons();
+    }
+
+    function clearPatientDetails() {
+      document.getElementById('displayCarteirinha').innerText = '---';
+      document.getElementById('displayName').innerText = 'Nenhum selecionado';
+      document.getElementById('displayFilial').innerText = '---';
+      document.getElementById('displayOperadora').innerText = '---';
+      document.getElementById('displayPlano').innerText = '---';
+      document.getElementById('displayStatusUsuario').innerText = '---';
+      document.getElementById('displayOperador').innerText = '---';
+      document.getElementById('badgeCurrentStatus').innerText = 'NENHUM SELECIONADO';
+      document.getElementById('tabContent').innerHTML = `<p class="text-center text-zinc-500 py-4 font-mono text-xs">Selecione ou cadastre um beneficiário para ver o detalhamento.</p>`;
+    }
+
+    // SUB-ABAS DE PROCEDIMENTOS
+    function switchTab(tabName) {
+      activeTab = tabName;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-bat-yellow', 'text-black');
+        btn.classList.add('bg-black', 'text-zinc-400', 'border', 'border-bat-border');
+      });
+
+      const activeBtn = document.getElementById(`tabBtn-${tabName}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-black', 'text-zinc-400', 'border', 'border-bat-border');
+        activeBtn.classList.add('bg-bat-yellow', 'text-black');
+      }
+
+      renderTabContent();
+    }
+
+    function renderTabContent() {
+      const patient = patients.find(p => p.id === selectedPatientId);
+      const container = document.getElementById('tabContent');
+
+      if (!patient) {
+        container.innerHTML = `<p class="text-center text-zinc-500 py-4 font-mono text-xs">Selecione um beneficiário.</p>`;
+        return;
+      }
+
+      const items = patient[activeTab] || [];
+
+      if (items.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 font-mono text-xs text-zinc-500 space-y-2">
+            <p>Nenhum registro cadastrado na aba <b>${activeTab.toUpperCase()}</b>.</p>
+            <button onclick="openAddProcedureModal()" class="px-3 py-1 bg-black border border-bat-yellow text-bat-yellow rounded hover:bg-bat-yellow hover:text-black font-bold transition">
+              + Adicionar Novo Registro
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      let html = `
+        <table class="w-full text-left font-mono text-xs">
+          <thead class="text-[10px] text-zinc-400 border-b border-bat-border uppercase">
+            <tr>
+              <th class="pb-1.5">Data</th>
+              <th class="pb-1.5">Solicitação / Procedimento</th>
+              <th class="pb-1.5">Médico / Especialidade</th>
+              <th class="pb-1.5">Local / Endereço</th>
+              <th class="pb-1.5">Protocolo/Guia</th>
+              <th class="pb-1.5">Status</th>
+              <th class="pb-1.5 text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-bat-border/40">
+      `;
+
+      items.forEach((item) => {
+        // Formatar cor e texto do status na tabela
+        let statusClass = 'text-bat-yellow';
+        const st = item.status || 'SOLICITADO';
+        if (st === 'EFETIVADO') statusClass = 'text-emerald-400';
+        else if (st === 'CANCELADO') statusClass = 'text-rose-500';
+        else if (st === 'AUSENCIA') statusClass = 'text-amber-300';
+        else if (st === 'AUTORIZADO / SENHA LIBERADA') statusClass = 'text-cyan-400';
+        else if (st === 'AGUARD. SENHA') statusClass = 'text-amber-400';
+
+        html += `
+          <tr class="hover:bg-zinc-900/50">
+            <td class="py-2 text-zinc-300 font-bold">${item.data || '---'}</td>
+            <td class="py-2 text-bat-yellow font-bold">${item.solicitacao || item.descricao || '---'}</td>
+            <td class="py-2 text-zinc-200">
+              <div>${item.medico || '---'}</div>
+              <div class="text-[10px] text-zinc-400">${item.especialidade || '---'}</div>
+            </td>
+            <td class="py-2 text-zinc-300">
+              <div>${item.local || '---'}</div>
+              <div class="text-[10px] text-zinc-400 truncate max-w-[150px]" title="${item.endereco || ''}">${item.endereco || '---'}</div>
+            </td>
+            <td class="py-2 text-bat-cyan font-bold">${item.protocolo || '---'}</td>
+            <td class="py-2">
+              <span class="px-1.5 py-0.5 rounded text-[10px] bg-black border border-bat-border ${statusClass} font-bold">${st}</span>
+            </td>
+            <td class="py-2 text-right space-x-1">
+              <button onclick="editProcedure('${item.id}')" title="Editar informações e status deste registro" class="p-1 bg-black hover:bg-bat-cyan hover:text-black text-bat-cyan border border-bat-cyan/40 rounded">
+                <i data-lucide="edit-3" class="w-3 h-3"></i>
+              </button>
+              <button onclick="duplicateProcedure('${item.id}')" title="Duplicar / Clonar este registro" class="p-1 bg-black hover:bg-bat-yellow hover:text-black text-bat-yellow border border-bat-yellow/40 rounded">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+              </button>
+              <button onclick="deleteProcedure('${item.id}')" title="Excluir" class="p-1 bg-black hover:bg-bat-red text-bat-red hover:text-white border border-bat-red/40 rounded">
+                <i data-lucide="trash-2" class="w-3 h-3"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function openAddProcedureModal() {
+      if (!selectedPatientId) return alert('Selecione um paciente primeiro.');
+      document.getElementById('editProcedureId').value = '';
+      document.getElementById('procedureModalTitle').innerHTML = `<i data-lucide="file-plus" class="w-4 h-4"></i> REGISTRAR ITEM / DETALHAMENTO DA ABA`;
+      document.getElementById('procCategory').value = activeTab;
+      document.getElementById('procData').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('procSolicitacao').value = '';
+      document.getElementById('procMedico').value = '';
+      document.getElementById('procEspecialidade').value = '';
+      document.getElementById('procLocal').value = '';
+      document.getElementById('procEndereco').value = '';
+      document.getElementById('procProtocolo').value = '';
+      document.getElementById('procStatus').value = 'SOLICITADO';
+      document.getElementById('addProcedureModal').classList.remove('hidden');
+    }
+
+    function saveProcedure(e) {
+      e.preventDefault();
+      const patient = patients.find(p => p.id === selectedPatientId);
+      if (!patient) return;
+
+      const editId = document.getElementById('editProcedureId').value;
+      const category = document.getElementById('procCategory').value;
+      const rawDate = document.getElementById('procData').value;
+      let formattedDate = '---';
+
+      if (rawDate) {
+        const parts = rawDate.split('-');
+        if (parts.length === 3) formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+
+      const procDataObj = {
+        id: editId ? editId : 'proc_' + Date.now(),
+        data: formattedDate,
+        solicitacao: document.getElementById('procSolicitacao').value.trim().toUpperCase(),
+        medico: document.getElementById('procMedico').value.trim().toUpperCase(),
+        especialidade: document.getElementById('procEspecialidade').value.trim().toUpperCase(),
+        local: document.getElementById('procLocal').value.trim().toUpperCase(),
+        endereco: document.getElementById('procEndereco').value.trim().toUpperCase(),
+        protocolo: document.getElementById('procProtocolo').value.trim().toUpperCase(),
+        status: document.getElementById('procStatus').value
+      };
+
+      if (!patient[category]) patient[category] = [];
+
+      if (editId) {
+        // Atualizar existente
+        const idx = patient[category].findIndex(i => i.id === editId);
+        if (idx !== -1) {
+          patient[category][idx] = procDataObj;
+          patient.historico.unshift({
+            data: new Date().toLocaleString('pt-BR'),
+            operador: currentOperator,
+            detalhe: `Registro atualizado na aba [${category.toUpperCase()}]: ${procDataObj.solicitacao} (Status: ${procDataObj.status})`
+          });
+        }
+      } else {
+        // Criar novo
+        patient[category].push(procDataObj);
+        patient.historico.unshift({
+          data: new Date().toLocaleString('pt-BR'),
+          operador: currentOperator,
+          detalhe: `Novo item adicionado na aba [${category.toUpperCase()}]: ${procDataObj.solicitacao}`
+        });
+      }
+
+      saveOperatorData();
+      closeModal('addProcedureModal');
+      renderPatientDetails();
+      addLog(`Item salvo na aba ${category} do paciente ${patient.nome}`);
+    }
+
+    function deleteProcedure(procId) {
+      const patient = patients.find(p => p.id === selectedPatientId);
+      if (!patient) return;
+
+      if (confirm('Deseja realmente remover este registro?')) {
+        patient[activeTab] = (patient[activeTab] || []).filter(item => item.id !== procId);
+        saveOperatorData();
+        renderPatientDetails();
+      }
+    }
+
+    // REGISTRO DE TRATATIVAS
+    function renderHistoryLog() {
+      const patient = patients.find(p => p.id === selectedPatientId);
+      const container = document.getElementById('historyLog');
+      const countEl = document.getElementById('tentativasCount');
+
+      if (!patient) {
+        container.innerHTML = `<p class="text-zinc-500 italic font-mono text-center py-2">Sem histórico.</p>`;
+        countEl.innerText = '0 tentativas';
+        return;
+      }
+
+      const hist = patient.historico || [];
+      const userContacts = hist.filter(h => h.operador !== 'SYSTEM');
+      countEl.innerText = `${userContacts.length} tentativas de contato`;
+
+      if (hist.length === 0) {
+        container.innerHTML = `<p class="text-zinc-500 italic font-mono text-center py-2">Nenhum registro de tratativa.</p>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      hist.forEach((h, idx) => {
+        const item = document.createElement('div');
+        item.className = 'bg-black/60 p-2 rounded border border-bat-border/60 font-mono space-y-1 relative group';
+
+        const isSystem = h.operador === 'SYSTEM';
+
+        item.innerHTML = `
+          <div class="flex justify-between items-center text-[10px]">
+            <span class="${isSystem ? 'text-zinc-500' : 'text-bat-cyan'} font-bold">${h.operador}</span>
+            <span class="text-zinc-500">${h.data}</span>
+          </div>
+          <p class="text-zinc-200 text-xs">${h.detalhe}</p>
+          ${!isSystem ? `
+            <div class="absolute right-2 bottom-1 hidden group-hover:flex gap-1">
+              <button onclick="editHistoryLog(${idx})" class="text-[9px] text-bat-yellow hover:underline">Editar</button>
+              <button onclick="deleteHistoryLog(${idx})" class="text-[9px] text-bat-red hover:underline">Excluir</button>
+            </div>
+          ` : ''}
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function openLogContactModal() {
+      if (!selectedPatientId) return alert('Selecione um paciente primeiro.');
+      document.getElementById('contactForm').reset();
+      document.getElementById('editHistoryIndex').value = '';
+      document.getElementById('contactModalTitle').innerHTML = `<i data-lucide="phone-outgoing" class="w-4 h-4"></i> REGISTRAR TENTATIVA DE CONTATO`;
+      updateContactResultOptions();
+      document.getElementById('logContactModal').classList.remove('hidden');
+    }
+
+    function saveContactLog(e) {
+      e.preventDefault();
+      const patient = patients.find(p => p.id === selectedPatientId);
+      if (!patient) return;
+
+      const channel = document.getElementById('contactChannel').value;
+      const result = document.getElementById('contactResult').value;
+      const notes = document.getElementById('contactNotes').value.trim();
+      const editIdx = document.getElementById('editHistoryIndex').value;
+
+      const logText = `[${channel}] - ${result}. Obs: ${notes}`;
+
+      if (editIdx !== '') {
+        patient.historico[editIdx].detalhe = logText;
+        patient.historico[editIdx].data = new Date().toLocaleString('pt-BR') + ' (Editado)';
+      } else {
+        if (!patient.historico) patient.historico = [];
+        patient.historico.unshift({
+          data: new Date().toLocaleString('pt-BR'),
+          operador: currentOperator,
+          detalhe: logText
+        });
+
+        if (result.includes('INSUCESSO') || result.includes('CAIXA POSTAL') || result.includes('NÃO ATENDEU')) {
+          patient.statusBackoffice = 'INSUCESSO DE CONTATO';
+        } else if (result.includes('SUCESSO') || result.includes('RESPONDIDO')) {
+          patient.statusBackoffice = 'EM CONTATO';
+        }
+      }
+
+      saveOperatorData();
+      closeModal('logContactModal');
+      renderPatientDetails();
+      renderQueue();
+      addLog(`Tratativa registrada para o paciente ${patient.nome}`);
+    }
+
+    function editHistoryLog(index) {
+      const patient = patients.find(p => p.id === selectedPatientId);
+      if (!patient || !patient.historico[index]) return;
+
+      const entry = patient.historico[index];
+      document.getElementById('editHistoryIndex').value = index;
+      document.getElementById('contactNotes').value = entry.detalhe;
+      document.getElementById('contactModalTitle').innerText = 'EDITAR REGISTRO DE TRATATIVA';
+      document.getElementById('logContactModal').classList.remove('hidden');
+    }
+
+    function deleteHistoryLog(index) {
+      const patient = patients.find(p => p.id === selectedPatientId);
+      if (!patient) return;
+
+      if (confirm('Deseja excluir este registro de histórico?')) {
+        patient.historico.splice(index, 1);
+        saveOperatorData();
+        renderHistoryLog();
+      }
+    }
+
+    function updatePatientStatus() {
+      const patient = patients.find(p => p.id === selectedPatientId);
+      if (!patient) return alert('Selecione um paciente.');
+
+      const newStatus = document.getElementById('changeStatusSelect').value;
+      const oldStatus = patient.statusBackoffice;
+
+      if (oldStatus !== newStatus) {
+        patient.statusBackoffice = newStatus;
+        patient.historico.unshift({
+          data: new Date().toLocaleString('pt-BR'),
+          operador: currentOperator,
+          detalhe: `Status do Backoffice alterado de [${oldStatus}] para [${newStatus}]`
+        });
+
+        saveOperatorData();
+        renderPatientDetails();
+        renderQueue();
+        addLog(`Status de ${patient.nome} alterado para ${newStatus}`);
+      }
+    }
+
+    // LEMBRETES TÁTICOS
+    function renderRemindersList() {
+      const patient = patients.find(p => p.id === selectedPatientId);
+      const container = document.getElementById('patientRemindersList');
+
+      if (!patient) {
+        container.innerHTML = `<p class="text-zinc-500 italic font-mono text-center py-2 text-xs">Sem lembretes.</p>`;
+        return;
+      }
+
+      const reminders = patient.lembretes || [];
+
+      if (reminders.length === 0) {
+        container.innerHTML = `<p class="text-zinc-500 italic font-mono text-center py-2 text-xs">Nenhum recontato agendado.</p>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      reminders.forEach((r) => {
+        const item = document.createElement('div');
+        const isDone = r.status === 'CONCLUIDO';
+
+        item.className = `p-2 rounded border font-mono text-xs flex justify-between items-center ${isDone ? 'bg-black/30 border-bat-border text-zinc-500 line-through' : 'bg-black/80 border-bat-yellow/40 text-zinc-100'}`;
+
+        const formattedDate = new Date(r.datetime).toLocaleString('pt-BR');
+
+        item.innerHTML = `
+          <div>
+            <div class="flex items-center gap-1">
+              <span class="text-bat-yellow font-bold text-[10px]">[${r.priority || 'NORMAL'}]</span>
+              <span class="font-bold text-bat-cyan">${formattedDate}</span>
+            </div>
+            <div class="text-[11px] font-sans">${r.reason}</div>
+            ${r.notes ? `<div class="text-[10px] text-zinc-400 italic">${r.notes}</div>` : ''}
+          </div>
+          <div class="flex gap-1">
+            ${!isDone ? `
+              <button onclick="completeReminder('${r.id}')" title="Concluir" class="p-1 bg-bat-yellow text-black rounded font-bold hover:bg-bat-yellowGlow">
+                <i data-lucide="check" class="w-3 h-3"></i>
+              </button>
+            ` : ''}
+            <button onclick="deleteReminder('${r.id}')" title="Remover" class="p-1 bg-bat-red/20 text-bat-red rounded hover:bg-bat-red hover:text-white">
+              <i data-lucide="x" class="w-3 h-3"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+
+      lucide.createIcons();
+    }
+
+    function openAddReminderModal() {
+      if (!selectedPatientId) return alert('Selecione um paciente primeiro.');
+      document.getElementById('reminderForm').reset();
+      document.getElementById('editReminderId').value = '';
+
+      const now = new Date();
+      now.setMinutes(now.getMinutes() + 30);
+      document.getElementById('reminderDatetime').value = now.toISOString().slice(0, 16);
+
+      document.getElementById('addReminderModal').classList.remove('hidden');
+    }
+
+    function saveReminder(e) {
+      e.preventDefault();
+      const patient = patients.find(p => p.id === selectedPatientId);
+      if (!patient) return;
+
+      const dt = document.getElementById('reminderDatetime').value;
+      const reason = document.getElementById('reminderReason').value;
+      const priority = document.getElementById('reminderPriority').value;
+      const notes = document.getElementById('reminderNotes').value.trim();
+
+      if (!patient.lembretes) patient.lembretes = [];
+
+      const newReminder = {
+        id: 'rem_' + Date.now(),
+        datetime: dt,
+        reason: reason,
+        priority: priority,
+        notes: notes,
+        status: 'PENDENTE'
+      };
+
+      patient.lembretes.push(newReminder);
+
+      patient.historico.unshift({
+        data: new Date().toLocaleString('pt-BR'),
+        operador: currentOperator,
+        detalhe: `Agendado recontato/acompanhamento para ${new Date(dt).toLocaleString('pt-BR')} [${reason}]`
+      });
+
+      saveOperatorData();
+      closeModal('addReminderModal');
+      renderPatientDetails();
+      addLog(`Lembrete agendado para o paciente ${patient.nome}`);
+    }
+
+    function completeReminder(remId) {
+      const patient = patients.find(p => p.id === selectedPatientId);
+      if (!patient) return;
+
+      const rem = (patient.lembretes || []).find(r => r.id === remId);
+      if (rem) {
+        rem.status = 'CONCLUIDO';
+        saveOperatorData();
+        renderRemindersList();
+      }
+    }
+
+    function deleteReminder(remId) {
+      const patient = patients.find(p => p.id === selectedPatientId);
+      if (!patient) return;
+
+      if (confirm('Deseja remover este lembrete?')) {
+        patient.lembretes = (patient.lembretes || []).filter(r => r.id !== remId);
+        saveOperatorData();
+        renderRemindersList();
+      }
+    }
+
+    // MONITORAMENTO DE ALARMES
+    function startReminderMonitor() {
+      setInterval(() => {
+        const now = new Date();
+        patients.forEach(p => {
+          (p.lembretes || []).forEach(r => {
+            if (r.status === 'PENDENTE') {
+              const remTime = new Date(r.datetime);
+              if (now >= remTime) {
+                triggerReminderAlert(p, r);
+              }
+            }
+          });
+        });
+      }, 10000);
+    }
+
+    function triggerReminderAlert(patient, reminder) {
+      currentTriggeredReminder = { patientId: patient.id, reminderId: reminder.id };
+
+      document.getElementById('popupPatientName').innerText = patient.nome;
+      document.getElementById('popupPatientCard').innerText = patient.carteirinha;
+      document.getElementById('popupReminderTime').innerText = new Date(reminder.datetime).toLocaleString('pt-BR');
+      document.getElementById('popupReminderNote').innerText = `${reminder.reason} ${reminder.notes ? '- ' + reminder.notes : ''}`;
+      document.getElementById('popupPriorityBadge').innerText = reminder.priority || 'URGENTE';
+
+      document.getElementById('popupReminderModal').classList.remove('hidden');
+    }
+
+    function snoozeReminder(minutes) {
+      if (!currentTriggeredReminder) return;
+
+      const patient = patients.find(p => p.id === currentTriggeredReminder.patientId);
+      if (patient) {
+        const rem = (patient.lembretes || []).find(r => r.id === currentTriggeredReminder.reminderId);
+        if (rem) {
+          const newTime = new Date();
+          newTime.setMinutes(newTime.getMinutes() + minutes);
+          rem.datetime = newTime.toISOString().slice(0, 16);
+          saveOperatorData();
+        }
+      }
+
+      closeModal('popupReminderModal');
+      currentTriggeredReminder = null;
+    }
+
+    function openPatientFromPopup() {
+      if (currentTriggeredReminder) {
+        selectPatient(currentTriggeredReminder.patientId);
+        closeModal('popupReminderModal');
+      }
+    }
+
+    function completeReminderFromPopup() {
+      if (currentTriggeredReminder) {
+        const patient = patients.find(p => p.id === currentTriggeredReminder.patientId);
+        if (patient) {
+          const rem = (patient.lembretes || []).find(r => r.id === currentTriggeredReminder.reminderId);
+          if (rem) {
+            rem.status = 'CONCLUIDO';
+            saveOperatorData();
+            if (selectedPatientId === patient.id) renderRemindersList();
+          }
+        }
+        closeModal('popupReminderModal');
+        currentTriggeredReminder = null;
+      }
+    }
+
+    // EDIÇÃO E CADASTRO DE BENEFICIÁRIO
+    function openAddPatientModal() {
+      document.getElementById('addPatientForm').reset();
+      document.getElementById('newPatientOperadora').value = 'NDI SP/RJ';
+      document.getElementById('newPatientStatus').value = 'NOVO';
+      document.getElementById('newPatientFilial').value = '';
+      document.getElementById('addPatientModal').classList.remove('hidden');
+    }
+
+    function saveNewPatient(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('newPatientName').value.trim().toUpperCase();
+      const card = document.getElementById('newPatientCard').value.trim();
+      const operadora = document.getElementById('newPatientOperadora').value;
+      const filial = document.getElementById('newPatientFilial').value.trim().toUpperCase();
+      const plano = document.getElementById('newPatientPlano').value.trim().toUpperCase();
+      const status = document.getElementById('newPatientStatus').value;
+
+      const newP = {
+        id: 'p_' + Date.now(),
+        carteirinha: card,
+        nome: name,
+        filial: filial || 'SÃO PAULO - SP',
+        cidade: filial || 'SÃO PAULO - SP',
+        operadora: operadora,
+        plano: plano || 'PADRÃO',
+        statusUsuario: 'ATIVO',
+        statusBackoffice: status,
+        operador: currentOperator,
+        createdAt: new Date().toISOString(),
+        tags: [],
+        consultas: [],
+        exames: [],
+        guias: [],
+        historico: [
+          {
+            data: new Date().toLocaleString('pt-BR'),
+            operador: currentOperator,
+            detalhe: `Beneficiário cadastrado no sistema Backoffice (${currentBase.replace('_', ' ')}) por ${currentOperator}.`
+          }
+        ],
+        lembretes: []
+      };
+
+      patients.unshift(newP);
+      saveOperatorData();
+      closeModal('addPatientModal');
+      selectPatient(newP.id);
+      addLog(`Novo beneficiário cadastrado: ${name}`);
     }
 
     function openEditPatientModal() {
       const patient = patients.find(p => p.id === selectedPatientId);
-      if (!patient) return alert('Selecione um paciente na fila primeiro.');
+      if (!patient) return alert('Selecione um beneficiário.');
 
       document.getElementById('editPatientName').value = patient.nome;
       document.getElementById('editPatientCard').value = patient.carteirinha;
@@ -1770,878 +2659,104 @@ OPERADOR RESPONSÁVEL: ${currentOperator}
       patient.nome = document.getElementById('editPatientName').value.trim().toUpperCase();
       patient.carteirinha = document.getElementById('editPatientCard').value.trim();
       patient.operadora = document.getElementById('editPatientOperadora').value;
-      patient.filial = document.getElementById('editPatientFilial').value.trim();
+      patient.filial = document.getElementById('editPatientFilial').value.trim().toUpperCase();
       patient.cidade = patient.filial;
-      patient.plano = document.getElementById('editPatientPlano').value.trim();
+      patient.plano = document.getElementById('editPatientPlano').value.trim().toUpperCase();
       patient.statusUsuario = document.getElementById('editPatientStatusUsuario').value;
 
-      addAuditLog("EDITAR_PACIENTE", `Dados da ficha de ${patient.nome} foram alterados.`);
-      saveOperatorData();
-      renderQueue();
-      renderPatientDetails();
-      closeModal('editPatientModal');
-      alert('✅ Dados do beneficiário atualizados com sucesso!');
-    }
-
-    function populateOperatorDropdown() {
-      const ops = getStoredOperators();
-      const select = document.getElementById('loginOperatorSelect');
-      select.innerHTML = '';
-      ops.forEach(op => {
-        const opt = document.createElement('option');
-        opt.value = op.name;
-        opt.innerText = op.name;
-        select.appendChild(opt);
+      patient.historico.unshift({
+        data: new Date().toLocaleString('pt-BR'),
+        operador: currentOperator,
+        detalhe: `Dados da ficha cadastral atualizados por ${currentOperator}.`
       });
-    }
 
-    function getStoredOperators() {
-      const saved = localStorage.getItem('bt_operators_list');
-      if (saved) {
-        try { return JSON.parse(saved); } catch(e) { return DEFAULT_OPERATORS; }
-      }
-      localStorage.setItem('bt_operators_list', JSON.stringify(DEFAULT_OPERATORS));
-      return DEFAULT_OPERATORS;
-    }
-
-    function handleLogin(e) {
-      e.preventDefault();
-      const selectedOp = document.getElementById('loginOperatorSelect').value;
-      const passInput = document.getElementById('loginPassword').value;
-      const ops = getStoredOperators();
-
-      const matched = ops.find(o => o.name === selectedOp && o.pass === passInput);
-
-      if (matched) {
-        currentOperator = matched.name;
-        sessionStorage.setItem('bt_active_operator', currentOperator);
-        document.getElementById('loginErrorMsg').classList.add('hidden');
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('loginPassword').value = '';
-
-        loadOperatorData();
-        initDashboard();
-        addAuditLog("LOGIN", `Operador ${currentOperator} iniciou sessão.`);
-      } else {
-        document.getElementById('loginErrorMsg').classList.remove('hidden');
-      }
-    }
-
-    function logoutOperator() {
-      addAuditLog("LOGOUT", `Operador ${currentOperator} encerrou a sessão.`);
       saveOperatorData();
-      sessionStorage.removeItem('bt_active_operator');
-      currentOperator = null;
-      document.getElementById('loginScreen').classList.remove('hidden');
-    }
-
-    function openNewOperatorModal() {
-      document.getElementById('newOperatorModal').classList.remove('hidden');
-    }
-
-    function saveNewOperator(e) {
-      e.preventDefault();
-      const name = document.getElementById('newOpName').value.trim().toUpperCase();
-      const pass = document.getElementById('newOpPassword').value.trim();
-
-      if (!name || !pass) return;
-
-      const ops = getStoredOperators();
-      if (ops.some(o => o.name === name)) {
-        alert("Já existe um operador com esse nome!");
-        return;
-      }
-
-      ops.push({ name: name, pass: pass });
-      localStorage.setItem('bt_operators_list', JSON.stringify(ops));
-
-      const newOpStorageKey = `black_trevas_data_${name}`;
-      localStorage.setItem(newOpStorageKey, JSON.stringify({
-        patients: [],
-        logs: [`[${new Date().toLocaleString('pt-BR')}] Base zerada criada para ${name}.`]
-      }));
-
-      populateOperatorDropdown();
-      closeModal('newOperatorModal');
-      document.getElementById('loginOperatorSelect').value = name;
-      alert(`Operador ${name} cadastrado com sucesso!`);
-    }
-
-    function loadOperatorData() {
-      if (!currentOperator) return;
-      const key = `black_trevas_data_${currentOperator}`;
-      const dataStr = localStorage.getItem(key);
-
-      if (dataStr) {
-        try {
-          const parsed = JSON.parse(dataStr);
-          patients = parsed.patients || [];
-          operatorLogs = parsed.logs || [];
-        } catch (e) {
-          patients = [];
-          operatorLogs = [];
-        }
-      } else {
-        patients = (currentOperator === 'BATMAN' || currentOperator === '') ? JSON.parse(JSON.stringify(DEMO_PATIENTS)) : [];
-        operatorLogs = [`[${new Date().toLocaleString('pt-BR')}] Perfil ativado.`];
-        saveOperatorData();
-      }
-
-      selectedPatientId = patients.length > 0 ? patients[0].id : null;
-    }
-
-    function saveOperatorData() {
-      if (!currentOperator) return;
-      const key = `black_trevas_data_${currentOperator}`;
-      localStorage.setItem(key, JSON.stringify({ patients, logs: operatorLogs }));
-      updateKpis();
-    }
-
-    function addAuditLog(action, details) {
-      const entry = `[${new Date().toLocaleString('pt-BR')}] [${action}] ${details}`;
-      operatorLogs.unshift(entry);
-      saveOperatorData();
-    }
-
-    function initDashboard() {
-      document.getElementById('headerCurrentOperator').innerText = currentOperator;
-      renderQueue();
+      closeModal('editPatientModal');
       renderPatientDetails();
-      updateKpis();
-
-      if (!window.reminderTimer) {
-        window.reminderTimer = setInterval(checkDueReminders, 8000);
-      }
+      renderQueue();
+      addLog(`Ficha do paciente ${patient.nome} atualizada.`);
     }
 
-    function exportOperatorBackup() {
-      if (!currentOperator) return;
-      saveOperatorData();
-
-      const exportObj = {
-        system: "BLACK_TREVAS_BACKOFFICE",
-        version: "9.1",
-        exportDate: new Date().toISOString(),
-        operator: currentOperator,
-        data: { patients, logs: operatorLogs }
-      };
-
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `BACKOFFICE_${currentOperator}_${new Date().toISOString().slice(0,10)}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-
-      addAuditLog("EXPORT", "Backup JSON exportado.");
-    }
-
-    function triggerImportBackup() { document.getElementById('importJsonInput').click(); }
-
-    function importOperatorBackup(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (imported.system !== "BLACK_TREVAS_BACKOFFICE" || !imported.data) {
-            return alert("Arquivo JSON inválido!");
-          }
-
-          if (confirm(`Deseja importar os registros para ${currentOperator}?`)) {
-            const existingCards = new Set(patients.map(p => p.carteirinha));
-            let addedCount = 0;
-
-            imported.data.patients.forEach(impP => {
-              if (!existingCards.has(impP.carteirinha)) {
-                patients.push(impP);
-                addedCount++;
-              }
-            });
-
-            addAuditLog("IMPORT", `Importou ${addedCount} registros.`);
-            saveOperatorData();
-            if (patients.length > 0 && !selectedPatientId) selectedPatientId = patients[0].id;
-            renderQueue();
-            renderPatientDetails();
-            alert(`Importação concluída com sucesso!`);
-          }
-        } catch (err) {
-          alert("Erro no arquivo: " + err.message);
-        }
-      };
-      reader.readAsText(file);
-    }
-
+    // LOGS E BACKUP
     function openLogsModal() {
       const container = document.getElementById('operatorLogsContainer');
       container.innerHTML = '';
 
       if (operatorLogs.length === 0) {
-        container.innerHTML = `<p class="text-zinc-500 italic">Sem logs.</p>`;
+        container.innerHTML = `<p class="text-zinc-500 italic text-center py-4">Nenhum log registrado nesta sessão.</p>`;
       } else {
-        operatorLogs.forEach(log => {
-          const p = document.createElement('p');
-          p.className = 'text-zinc-300 font-mono text-[11px] border-b border-bat-border/30 pb-1';
-          p.innerText = log;
-          container.appendChild(p);
+        operatorLogs.forEach(l => {
+          const div = document.createElement('div');
+          div.className = 'border-b border-bat-border/40 pb-1 text-zinc-300';
+          div.innerHTML = `<span class="text-bat-cyan">[${l.data}]</span> <b class="text-bat-yellow">${l.operador}:</b> ${l.detalhe}`;
+          container.appendChild(div);
         });
       }
+
       document.getElementById('logsModal').classList.remove('hidden');
     }
 
     function clearOperatorLogs() {
-      if (confirm("Deseja limpar todos os logs?")) {
+      if (confirm('Deseja limpar todos os logs registrados?')) {
         operatorLogs = [];
-        addAuditLog("CLEAR_LOGS", "Logs limpos.");
+        saveOperatorData();
         openLogsModal();
       }
     }
 
-    function renderQueue() {
-      const tbody = document.getElementById('queueTableBody');
-      const kanbanContainer = document.getElementById('queueKanbanView');
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      const statusFilter = document.getElementById('statusFilter').value;
-      const opFilter = document.getElementById('operatorFilter').value;
-
-      tbody.innerHTML = '';
-      kanbanContainer.innerHTML = '';
-      let total = 0, abertos = 0;
-
-      const filteredPatients = patients.filter(patient => {
-        total++;
-        if (patient.statusBackoffice !== 'CONCLUÍDO') abertos++;
-
-        let matchesSearch = patient.nome.toLowerCase().includes(search) || 
-                              patient.carteirinha.toLowerCase().includes(search);
-
-        if (!matchesSearch && search.length > 2) {
-          const allItems = [...(patient.consultas||[]), ...(patient.exames||[]), ...(patient.guias||[])];
-          matchesSearch = allItems.some(i => (i.protocolo && i.protocolo.toLowerCase().includes(search)) || (i.solicitacao && i.solicitacao.toLowerCase().includes(search)));
-        }
-        
-        let matchesStatus = (statusFilter === 'TODOS') || patient.statusBackoffice.includes(statusFilter);
-        let matchesOp = (opFilter === 'TODAS') || (patient.operadora === opFilter);
-
-        let matchesUnsuccessful = true;
-        if (filterOnlyUnsuccessful) {
-          matchesUnsuccessful = patient.statusBackoffice.includes('INSUCESSO') || 
-                                (patient.historico && patient.historico.length >= 2);
-        }
-
-        return matchesSearch && matchesStatus && matchesOp && matchesUnsuccessful;
-      });
-
-      // MODO TABELA
-      filteredPatients.forEach(patient => {
-        const isSelected = patient.id === selectedPatientId;
-        const sla = calculatePatientSla(patient);
-
-        const tr = document.createElement('tr');
-        tr.className = `cursor-pointer transition border-b border-bat-border/30 hover:bg-bat-yellow/10 ${isSelected ? 'bg-bat-yellow/20 font-bold border-l-4 border-l-bat-yellow' : ''}`;
-        tr.onclick = () => selectPatient(patient.id);
-
-        let badgeColor = 'bg-zinc-800 text-zinc-300 border-zinc-600';
-        if (patient.statusBackoffice === 'NOVO') badgeColor = 'bg-bat-cyan/20 text-bat-cyan border-bat-cyan/40';
-        if (patient.statusBackoffice.includes('AGUARD')) badgeColor = 'bg-bat-yellow/20 text-bat-yellow border-bat-yellow/40';
-        if (patient.statusBackoffice === 'CONCLUÍDO') badgeColor = 'bg-bat-green/20 text-bat-green border-bat-green/40';
-        if (patient.statusBackoffice.includes('INSUCESSO')) badgeColor = 'bg-bat-red/20 text-bat-red border-bat-red/40';
-
-        let slaBadge = 'text-zinc-400';
-        if (sla.status === 'expired') slaBadge = 'text-bat-red font-bold animate-pulse';
-        if (sla.status === 'warning') slaBadge = 'text-bat-yellow font-bold';
-
-        tr.innerHTML = `
-          <td class="p-2.5">
-            <div class="text-xs ${isSelected ? 'text-bat-yellow' : 'text-zinc-100'}">${patient.nome}</div>
-            <div class="text-[10px] text-zinc-500 font-mono">${patient.carteirinha} • <span class="text-bat-cyan">${patient.operadora||'NDI'}</span></div>
-          </td>
-          <td class="p-2.5 text-right">
-            <span class="inline-block px-2 py-0.5 rounded text-[9px] font-mono border ${badgeColor}">
-              ${patient.statusBackoffice}
-            </span>
-            <div class="text-[9px] font-mono ${slaBadge} mt-0.5">SLA: ${sla.text}</div>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      // MODO KANBAN
-      if (isKanbanView) {
-        filteredPatients.forEach(p => {
-          const card = document.createElement('div');
-          const isSelected = p.id === selectedPatientId;
-          card.className = `p-2.5 bg-black/80 rounded border cursor-pointer hover:border-bat-yellow transition ${isSelected ? 'border-bat-yellow bg-bat-yellow/10' : 'border-bat-border'}`;
-          card.onclick = () => selectPatient(p.id);
-
-          card.innerHTML = `
-            <div class="flex justify-between items-start mb-1">
-              <span class="text-bat-yellow font-bold truncate max-w-[140px]">${p.nome}</span>
-              <span class="text-[9px] px-1.5 py-0.5 rounded bg-black border border-bat-border text-bat-cyan">${p.statusBackoffice}</span>
-            </div>
-            <div class="text-[10px] text-zinc-400">${p.carteirinha}</div>
-            <div class="text-[10px] text-zinc-500 mt-1 flex justify-between">
-              <span>${p.filial||'---'}</span>
-              <span class="text-bat-green">${(p.consultas||[]).length + (p.exames||[]).length} itens</span>
-            </div>
-          `;
-          kanbanContainer.appendChild(card);
-        });
-      }
-
-      document.getElementById('totalCasesCount').innerText = total;
-      document.getElementById('openCasesCount').innerText = abertos;
-    }
-
-    function selectPatient(id) {
-      selectedPatientId = id;
-      renderQueue();
-      renderPatientDetails();
-    }
-
-    function renderPatientDetails() {
-      const patient = patients.find(p => p.id === selectedPatientId);
-
-      if (!patient) {
-        document.getElementById('displayName').innerText = 'Nenhum caso selecionado';
-        document.getElementById('displayCarteirinha').innerText = '---';
-        document.getElementById('displayFilial').innerText = '---';
-        document.getElementById('displayOperadora').innerText = '---';
-        document.getElementById('displayPlano').innerText = '---';
-        document.getElementById('displayStatusUsuario').innerText = '---';
-        document.getElementById('displayOperador').innerText = currentOperator || '---';
-        document.getElementById('badgeCurrentStatus').innerText = 'VAZIO';
-        document.getElementById('displaySlaTimer').innerText = '---';
-        document.getElementById('patientTagsContainer').innerHTML = '';
-        document.getElementById('tabContent').innerHTML = `<div class="text-center text-zinc-500 py-6 text-xs font-mono">Nenhum paciente cadastrado.</div>`;
-        document.getElementById('historyLog').innerHTML = `<p class="text-zinc-500 italic text-center py-4 text-xs font-mono">Sem dados.</p>`;
-        document.getElementById('patientRemindersList').innerHTML = `<p class="text-zinc-500 italic text-center py-4 text-xs font-mono">Sem dados.</p>`;
-        return;
-      }
-
-      const sla = calculatePatientSla(patient);
-      const slaEl = document.getElementById('displaySlaTimer');
-      slaEl.innerText = sla.text;
-      slaEl.className = `font-bold text-[11px] px-2 py-0.5 rounded border ${sla.status === 'expired' ? 'bg-bat-red/20 text-bat-red border-bat-red/40 animate-pulse' : 'bg-bat-yellow/10 text-bat-yellow border-bat-yellow/30'}`;
-
-      document.getElementById('displayCarteirinha').innerText = patient.carteirinha;
-      document.getElementById('displayName').innerText = patient.nome;
-      document.getElementById('displayFilial').innerText = patient.filial || 'SAO PAULO - SP';
-      document.getElementById('displayOperadora').innerText = patient.operadora || 'NDI SP/RJ';
-      document.getElementById('displayPlano').innerText = patient.plano || 'INDIVIDUAL';
-      document.getElementById('displayStatusUsuario').innerText = patient.statusUsuario || 'ATIVO';
-      document.getElementById('displayOperador').innerText = currentOperator;
-      document.getElementById('badgeCurrentStatus').innerText = patient.statusBackoffice;
-      document.getElementById('changeStatusSelect').value = patient.statusBackoffice;
-
-      document.getElementById('countConsultas').innerText = patient.consultas ? patient.consultas.length : 0;
-      document.getElementById('countExames').innerText = patient.exames ? patient.exames.length : 0;
-      document.getElementById('countGuias').innerText = patient.guias ? patient.guias.length : 0;
-
-      renderPatientTags(patient);
-      renderTabContent(patient);
-      renderHistoryLog(patient);
-      renderPatientReminders(patient);
-
-      lucide.createIcons();
-    }
-
-    function switchTab(tabName) {
-      activeTab = tabName;
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('bg-bat-yellow', 'text-black');
-        btn.classList.add('bg-black', 'text-zinc-400', 'border', 'border-bat-border');
-      });
-      const activeBtn = document.getElementById(`tabBtn-${tabName}`);
-      if (activeBtn) {
-        activeBtn.classList.remove('bg-black', 'text-zinc-400', 'border', 'border-bat-border');
-        activeBtn.classList.add('bg-bat-yellow', 'text-black');
-      }
-
-      const patient = patients.find(p => p.id === selectedPatientId);
-      if (patient) renderTabContent(patient);
-    }
-
-    function renderTabContent(patient) {
-      const container = document.getElementById('tabContent');
-      const items = patient[activeTab] || [];
-
-      if (items.length === 0) {
-        container.innerHTML = `<div class="text-center text-zinc-500 py-6 text-xs font-mono">Nenhum registro encontrado nesta aba.</div>`;
-        return;
-      }
-
-      let html = `
-        <table class="w-full text-left text-xs font-mono">
-          <thead class="text-zinc-500 border-b border-bat-border text-[10px] uppercase bg-black">
-            <tr>
-              <th class="py-1.5 px-2">DATA</th>
-              <th class="py-1.5 px-2">SOLICITAÇÃO</th>
-              <th class="py-1.5 px-2">MÉDICO</th>
-              <th class="py-1.5 px-2">ESPECIALIDADE</th>
-              <th class="py-1.5 px-2">LOCAL</th>
-              <th class="py-1.5 px-2">PROTOCOLO / GUIA</th>
-              <th class="py-1.5 px-2 text-right">AÇÕES / STATUS</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-bat-border/40">
-      `;
-
-      items.forEach(item => {
-        let statusBadge = 'text-bat-yellow border-bat-yellow/40 bg-bat-yellow/10';
-        if (item.status && (item.status.includes('AUTORIZADO') || item.status.includes('EFETIVADO'))) {
-          statusBadge = 'text-bat-green border-bat-green/40 bg-bat-green/10';
-        }
-        html += `
-          <tr class="hover:bg-bat-yellow/5 transition">
-            <td class="py-2 px-2 text-bat-cyan font-bold whitespace-nowrap">${item.data || '---'}</td>
-            <td class="py-2 px-2 text-zinc-100 font-bold">${item.solicitacao || item.descricao || '---'}</td>
-            <td class="py-2 px-2 text-zinc-300 whitespace-nowrap">${item.medico || '---'}</td>
-            <td class="py-2 px-2 text-zinc-400 whitespace-nowrap">${item.especialidade || '---'}</td>
-            <td class="py-2 px-2 text-zinc-300">${item.local || '---'}</td>
-            <td class="py-2 px-2 text-bat-yellow font-bold whitespace-nowrap">${item.protocolo || '---'}</td>
-            <td class="py-2 px-2 text-right whitespace-nowrap flex items-center justify-end gap-1.5">
-              <button onclick="duplicateProcedure('${item.id}')" title="Duplicar este procedimento" class="px-1.5 py-0.5 bg-black border border-bat-cyan text-bat-cyan hover:bg-bat-cyan hover:text-black rounded text-[10px]">📋 DUPLICAR</button>
-              <span class="px-2 py-0.5 text-[10px] border rounded ${statusBadge}">${item.status || 'PENDENTE'}</span>
-            </td>
-          </tr>
-        `;
-      });
-
-      html += `</tbody></table>`;
-      container.innerHTML = html;
-    }
-
-    function renderHistoryLog(patient) {
-      const container = document.getElementById('historyLog');
-      const log = patient.historico || [];
-
-      document.getElementById('tentativasCount').innerText = `${log.length} tentativas`;
-
-      if (log.length === 0) {
-        container.innerHTML = `<p class="text-zinc-500 italic text-center py-4 text-xs font-mono">Nenhuma tentativa registrada ainda.</p>`;
-        return;
-      }
-
-      container.innerHTML = '';
-      log.slice().reverse().forEach((entry, reverseIdx) => {
-        const originalIndex = log.length - 1 - reverseIdx;
-        const item = document.createElement('div');
-        item.className = 'bg-black/60 p-2 rounded border border-bat-border text-xs font-mono relative group';
-        item.innerHTML = `
-          <div class="flex justify-between items-center text-[10px] text-zinc-400 border-b border-bat-border/40 pb-1 mb-1">
-            <span class="text-bat-yellow font-bold">${entry.operador || currentOperator}</span>
-            <div class="flex items-center gap-2">
-              <span>${entry.data}</span>
-              <button onclick="editHistoryEntry(${originalIndex})" title="Editar Tratativa" class="text-bat-cyan hover:underline">✏️ EDITAR</button>
-              <button onclick="deleteHistoryEntry(${originalIndex})" title="Excluir Tratativa" class="text-bat-red hover:underline">🗑️ EXCLUIR</button>
-            </div>
-          </div>
-          <p class="text-zinc-200 font-sans text-xs">${entry.detalhe}</p>
-        `;
-        container.appendChild(item);
-      });
-    }
-
-    function editHistoryEntry(idx) {
-      const patient = patients.find(p => p.id === selectedPatientId);
-      if (!patient || !patient.historico[idx]) return;
-
-      const entry = patient.historico[idx];
-      document.getElementById('editHistoryIndex').value = idx;
-      document.getElementById('contactNotes').value = entry.detalhe;
-      document.getElementById('contactModalTitle').innerText = '✏️ EDITAR TENTATIVA DE CONTATO';
-
-      openLogContactModal();
-    }
-
-    function deleteHistoryEntry(idx) {
-      const patient = patients.find(p => p.id === selectedPatientId);
-      if (!patient) return;
-
-      if (confirm('Deseja realmente excluir este registro de tratativa?')) {
-        patient.historico.splice(idx, 1);
-        addAuditLog("EXCLUIR_TRATATIVA", `Registro de tratativa excluído para ${patient.nome}`);
-        saveOperatorData();
-        renderPatientDetails();
-      }
-    }
-
-    function renderPatientReminders(patient) {
-      const container = document.getElementById('patientRemindersList');
-      const reminders = patient.lembretes || [];
-
-      if (reminders.length === 0) {
-        container.innerHTML = `<p class="text-zinc-500 italic text-center py-4 text-xs font-mono">Sem lembretes cadastrados.</p>`;
-        return;
-      }
-
-      container.innerHTML = '';
-      reminders.forEach(rem => {
-        const div = document.createElement('div');
-        const isOverdue = new Date(rem.datetime) <= new Date() && !rem.completed;
-
-        let priorityStyle = 'border-bat-border text-zinc-300';
-        if (rem.priority === 'CRÍTICO') priorityStyle = 'border-bat-yellow text-bat-yellow bg-bat-yellow/10';
-        if (isOverdue) priorityStyle = 'border-bat-red text-bat-red bg-bat-red/10 animate-pulse';
-
-        div.className = `p-2 rounded border ${priorityStyle} flex items-center justify-between font-mono text-xs`;
-        div.innerHTML = `
-          <div class="flex-1 pr-2">
-            <div class="font-bold flex items-center gap-1.5">
-              <i data-lucide="${rem.completed ? 'check-circle' : 'clock'}" class="w-3.5 h-3.5"></i>
-              <span>${rem.reason}</span>
-            </div>
-            <div class="text-[10px] text-zinc-400 mt-0.5">
-              Data: ${new Date(rem.datetime).toLocaleString('pt-BR')} ${rem.notes ? `- ${rem.notes}` : ''}
-            </div>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <button onclick="editReminder('${patient.id}', '${rem.id}')" title="Editar Lembrete" class="p-1 bg-black text-bat-cyan hover:bg-bat-cyan hover:text-black rounded border border-bat-border">
-              ✏️
-            </button>
-            <button onclick="deleteReminder('${patient.id}', '${rem.id}')" title="Excluir Lembrete" class="p-1 bg-black text-bat-red hover:bg-bat-red hover:text-white rounded border border-bat-border">
-              🗑️
-            </button>
-            ${!rem.completed ? `
-              <button onclick="markReminderDone('${patient.id}', '${rem.id}')" title="Concluir Lembrete" class="p-1 bg-black hover:bg-bat-yellow hover:text-black rounded border border-bat-border">
-                <i data-lucide="check" class="w-3.5 h-3.5"></i>
-              </button>
-            ` : '<span class="text-[10px] text-bat-green font-bold">OK</span>'}
-          </div>
-        `;
-        container.appendChild(div);
-      });
-      lucide.createIcons();
-    }
-
-    function editReminder(patientId, reminderId) {
-      const patient = patients.find(p => p.id === patientId);
-      if (!patient || !patient.lembretes) return;
-
-      const rem = patient.lembretes.find(r => r.id === reminderId);
-      if (!rem) return;
-
-      document.getElementById('editReminderId').value = rem.id;
-      document.getElementById('reminderDatetime').value = rem.datetime;
-      document.getElementById('reminderReason').value = rem.reason;
-      document.getElementById('reminderPriority').value = rem.priority || 'NORMAL';
-      document.getElementById('reminderNotes').value = rem.notes || '';
-      document.getElementById('reminderModalTitle').innerText = '✏️ EDITAR LEMBRETE / ACOMPANHAMENTO';
-
-      openAddReminderModal();
-    }
-
-    function deleteReminder(patientId, reminderId) {
-      const patient = patients.find(p => p.id === patientId);
-      if (!patient || !patient.lembretes) return;
-
-      if (confirm('Deseja excluir este lembrete?')) {
-        patient.lembretes = patient.lembretes.filter(r => r.id !== reminderId);
-        addAuditLog("EXCLUIR_LEMBRETE", `Lembrete removido para ${patient.nome}`);
-        saveOperatorData();
-        renderPatientDetails();
-        renderQueue();
-      }
-    }
-
-    function saveContactLog(e) {
-      e.preventDefault();
-      const patient = patients.find(p => p.id === selectedPatientId);
-      if (!patient) return;
-
-      const editIdx = document.getElementById('editHistoryIndex').value;
-      const channel = document.getElementById('contactChannel').value;
-      const result = document.getElementById('contactResult').value;
-      const notes = document.getElementById('contactNotes').value;
-      const formattedDate = new Date().toLocaleString('pt-BR');
-
-      if (!patient.historico) patient.historico = [];
-
-      if (editIdx !== '') {
-        patient.historico[editIdx].detalhe = `[${channel}] - ${result}: ${notes} (Editado)`;
-        addAuditLog("EDITAR_CONTATO", `Tratativa editada para ${patient.nome}`);
-      } else {
-        patient.historico.push({
-          data: formattedDate,
-          operador: currentOperator,
-          detalhe: `[${channel}] - ${result}: ${notes}`
-        });
-        addAuditLog("REGISTRAR_CONTATO", `Contato registrado para ${patient.nome} [${channel}]`);
-      }
-
-      saveOperatorData();
-      renderPatientDetails();
-      closeModal('logContactModal');
-      document.getElementById('contactNotes').value = '';
-      document.getElementById('editHistoryIndex').value = '';
-    }
-
-    function updatePatientStatus() {
-      const patient = patients.find(p => p.id === selectedPatientId);
-      if (!patient) return;
-
-      const newStatus = document.getElementById('changeStatusSelect').value;
-      patient.statusBackoffice = newStatus;
-
-      const formattedDate = new Date().toLocaleString('pt-BR');
-      
-      if (!patient.historico) patient.historico = [];
-      patient.historico.push({
-        data: formattedDate,
-        operador: currentOperator,
-        detalhe: `Status alterado para: ${newStatus}`
-      });
-
-      addAuditLog("STATUS_UPDATE", `Status de ${patient.nome} alterado para ${newStatus}`);
-      saveOperatorData();
-      renderQueue();
-      renderPatientDetails();
-    }
-
-    function saveReminder(e) {
-      e.preventDefault();
-      const patient = patients.find(p => p.id === selectedPatientId);
-      if (!patient) return;
-
-      const editId = document.getElementById('editReminderId').value;
-      const datetime = document.getElementById('reminderDatetime').value;
-      const reason = document.getElementById('reminderReason').value;
-      const priority = document.getElementById('reminderPriority').value;
-      const notes = document.getElementById('reminderNotes').value;
-
-      if (!patient.lembretes) patient.lembretes = [];
-
-      if (editId !== '') {
-        const rem = patient.lembretes.find(r => r.id === editId);
-        if (rem) {
-          rem.datetime = datetime;
-          rem.reason = reason;
-          rem.priority = priority;
-          rem.notes = notes;
-          addAuditLog("EDITAR_LEMBRETE", `Lembrete editado para ${patient.nome}`);
-        }
-      } else {
-        patient.lembretes.push({
-          id: 'rem_' + Date.now(),
-          datetime: datetime,
-          reason: reason,
-          priority: priority,
-          notes: notes,
-          completed: false
-        });
-        addAuditLog("AGENDAR_LEMBRETE", `Lembrete agendado para ${patient.nome}`);
-      }
-
-      saveOperatorData();
-      renderPatientDetails();
-      renderQueue();
-      closeModal('addReminderModal');
-      document.getElementById('reminderForm').reset();
-      document.getElementById('editReminderId').value = '';
-    }
-
-    function markReminderDone(patientId, reminderId) {
-      const patient = patients.find(p => p.id === patientId);
-      if (!patient || !patient.lembretes) return;
-
-      const rem = patient.lembretes.find(r => r.id === reminderId);
-      if (rem) {
-        rem.completed = true;
-        addAuditLog("CONCLUIR_LEMBRETE", `Lembrete concluído para ${patient.nome}`);
-        saveOperatorData();
-        renderPatientDetails();
-        renderQueue();
-      }
-    }
-
-    function checkDueReminders() {
-      if (!currentOperator) return;
-      const now = new Date();
-      
-      for (let p of patients) {
-        if (!p.lembretes) continue;
-        for (let rem of p.lembretes) {
-          if (!rem.completed && new Date(rem.datetime) <= now) {
-            triggerTacticalPopup(p, rem);
-            return;
-          }
-        }
-      }
-    }
-
-    function triggerTacticalPopup(patient, reminder) {
-      currentTriggeredReminder = { patientId: patient.id, reminderId: reminder.id };
-
-      document.getElementById('popupPatientName').innerText = patient.nome;
-      document.getElementById('popupPatientCard').innerText = patient.carteirinha;
-      document.getElementById('popupReminderTime').innerText = new Date(reminder.datetime).toLocaleString('pt-BR');
-      document.getElementById('popupReminderNote').innerText = `${reminder.reason} ${reminder.notes ? '(' + reminder.notes + ')' : ''}`;
-
-      const badge = document.getElementById('popupPriorityBadge');
-      badge.innerText = reminder.priority || 'URGENTE';
-
-      document.getElementById('popupReminderModal').classList.remove('hidden');
-      playBatBeep();
-    }
-
-    function playBatBeep() {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.3);
-
-        gain.gain.setValueAtTime(0.15, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc.start();
-        osc.stop(ctx.currentTime + 0.3);
-      } catch (e) {}
-    }
-
-    function completeReminderFromPopup() {
-      if (currentTriggeredReminder) {
-        markReminderDone(currentTriggeredReminder.patientId, currentTriggeredReminder.reminderId);
-      }
-      closeModal('popupReminderModal');
-      currentTriggeredReminder = null;
-    }
-
-    function snoozeReminder(minutes) {
-      if (currentTriggeredReminder) {
-        const p = patients.find(pt => pt.id === currentTriggeredReminder.patientId);
-        if (p && p.lembretes) {
-          const rem = p.lembretes.find(r => r.id === currentTriggeredReminder.reminderId);
-          if (rem) {
-            const newTime = new Date(Date.now() + minutes * 60000);
-            rem.datetime = newTime.toISOString().slice(0, 16);
-            saveOperatorData();
-            renderPatientDetails();
-          }
-        }
-      }
-      closeModal('popupReminderModal');
-      currentTriggeredReminder = null;
-    }
-
-    function openPatientFromPopup() {
-      if (currentTriggeredReminder) {
-        selectPatient(currentTriggeredReminder.patientId);
-      }
-      closeModal('popupReminderModal');
-    }
-
-    function saveNewPatient(e) {
-      e.preventDefault();
-      const name = document.getElementById('newPatientName').value;
-      const card = document.getElementById('newPatientCard').value;
-      const operadora = document.getElementById('newPatientOperadora').value;
-      const filial = document.getElementById('newPatientFilial').value;
-      const plano = document.getElementById('newPatientPlano').value;
-      const status = document.getElementById('newPatientStatus').value;
-
-      const newId = 'p_' + Date.now();
-      const newPatientObj = {
-        id: newId,
-        carteirinha: card,
-        nome: name.toUpperCase(),
-        filial: filial || 'SAO PAULO - SP',
-        cidade: filial || 'SAO PAULO - SP',
-        operadora: operadora || 'NDI SP/RJ',
-        plano: plano || 'INDIVIDUAL',
-        statusUsuario: 'ATIVO',
-        statusBackoffice: status,
-        operador: currentOperator,
-        createdAt: new Date().toISOString(),
-        tags: [],
-        consultas: [],
-        exames: [],
-        guias: [],
-        historico: [
-          { data: new Date().toLocaleString('pt-BR'), operador: currentOperator, detalhe: 'Caso cadastrado na fila do operador.' }
-        ],
-        lembretes: []
+    function exportOperatorBackup() {
+      const exportData = {
+        operator: currentOperator,
+        base: currentBase,
+        exportedAt: new Date().toISOString(),
+        patients: patients,
+        logs: operatorLogs
       };
 
-      patients.unshift(newPatientObj);
-      addAuditLog("NOVO_PACIENTE", `Cadastrou paciente ${newPatientObj.nome} (${card})`);
-      saveOperatorData();
-      selectPatient(newId);
-      closeModal('addPatientModal');
-      document.getElementById('addPatientForm').reset();
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `backup_black_trevas_${currentOperator}_${currentBase}_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+
+      addLog('Backup de dados exportado com sucesso.');
     }
 
-    function saveProcedure(e) {
-      e.preventDefault();
-      const patient = patients.find(p => p.id === selectedPatientId);
-      if (!patient) return;
-
-      const category = document.getElementById('procCategory').value;
-      const dataInput = document.getElementById('procData').value;
-      const solicitacao = document.getElementById('procSolicitacao').value;
-      const medico = document.getElementById('procMedico').value;
-      const especialidade = document.getElementById('procEspecialidade').value;
-      const local = document.getElementById('procLocal').value;
-      const endereco = document.getElementById('procEndereco').value;
-      const protocolo = document.getElementById('procProtocolo').value;
-      const status = document.getElementById('procStatus').value;
-
-      let formattedData = new Date().toLocaleDateString('pt-BR');
-      if (dataInput) {
-        const parts = dataInput.split('-');
-        if (parts.length === 3) formattedData = `${parts[2]}/${parts[1]}/${parts[0]}`;
-      }
-
-      if (!patient[category]) patient[category] = [];
-
-      patient[category].push({
-        id: 'proc_' + Date.now(),
-        data: formattedData,
-        solicitacao: solicitacao.toUpperCase(),
-        medico: medico.toUpperCase() || 'N/A',
-        especialidade: especialidade.toUpperCase() || 'N/A',
-        local: local.toUpperCase() || 'N/A',
-        endereco: endereco.toUpperCase() || 'N/A',
-        protocolo: protocolo.toUpperCase() || 'PROT-' + Math.floor(100000 + Math.random() * 900000),
-        status: status
-      });
-
-      addAuditLog("NOVO_PROCEDIMENTO", `Adicionou na aba [${category}] para ${patient.nome}: ${solicitacao}`);
-      saveOperatorData();
-      renderPatientDetails();
-      closeModal('addProcedureModal');
-      document.getElementById('procedureForm').reset();
+    function triggerImportBackup() {
+      document.getElementById('importJsonInput').click();
     }
 
-    function openAddPatientModal() { document.getElementById('addPatientModal').classList.remove('hidden'); }
-    function openAddReminderModal() {
-      if (!selectedPatientId) return alert('Selecione um paciente na fila primeiro.');
-      document.getElementById('editReminderId').value = '';
-      document.getElementById('reminderModalTitle').innerText = '⏰ AGENDAR LEMBRETE / SENHA';
-      document.getElementById('addReminderModal').classList.remove('hidden');
+    function importOperatorBackup(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (imported.patients && Array.isArray(imported.patients)) {
+            patients = imported.patients;
+            if (imported.logs) operatorLogs = imported.logs;
+
+            saveOperatorData();
+            initDashboard();
+            alert('Backup importado com sucesso!');
+            addLog('Backup importado via arquivo JSON.');
+          } else {
+            alert('Formato de arquivo de backup inválido.');
+          }
+        } catch (err) {
+          alert('Erro ao ler o arquivo JSON: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
     }
-    function openLogContactModal() {
-      if (!selectedPatientId) return alert('Selecione um paciente na fila primeiro.');
-      document.getElementById('editHistoryIndex').value = '';
-      document.getElementById('contactModalTitle').innerText = '📞 REGISTRAR TENTATIVA DE CONTATO';
-      document.getElementById('logContactModal').classList.remove('hidden');
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
     }
-    function openAddProcedureModal() {
-      if (!selectedPatientId) return alert('Selecione um paciente na fila primeiro.');
-      document.getElementById('addProcedureModal').classList.remove('hidden');
-    }
-    function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
   </script>
 </body>
 </html>
