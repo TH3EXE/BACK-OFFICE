@@ -1112,7 +1112,6 @@
   <script>
     const DEFAULT_OPERATORS = [
       { name: "BATMAN", pass: "1234" },
-      { name: "RONNEY", pass: "1234" },
     ];
 
     const BRAZIL_CITIES = [
@@ -1883,7 +1882,7 @@ OPERADOR RESPONSÁVEL: ${currentOperator}
           operatorLogs = [];
         }
       } else {
-        patients = (currentOperator === 'BATMAN' || currentOperator === 'RONNEY') ? JSON.parse(JSON.stringify(DEMO_PATIENTS)) : [];
+        patients = (currentOperator === 'BATMAN' || currentOperator === '') ? JSON.parse(JSON.stringify(DEMO_PATIENTS)) : [];
         operatorLogs = [`[${new Date().toLocaleString('pt-BR')}] Perfil ativado.`];
         saveOperatorData();
       }
