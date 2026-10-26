@@ -1,4 +1,4 @@
-# BLACK-OFFICE
+# BACK-OFFICE
 🌑 SISTEMA DE GESTÃO TÁTICA E OPERAÇÕES CRÍTICAS
 
 "Nas sombras da complexidade operacional, a eficiência é a nossa lâmina."
