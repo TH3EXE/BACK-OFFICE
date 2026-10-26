@@ -1,40 +1,34 @@
-# BACK-OFFICE
-🌑 SISTEMA DE GESTÃO TÁTICA E OPERAÇÕES CRÍTICAS
-
+BACK-OFFICE
+Sistema de Gestão Tática e Operações Críticas
 "Nas sombras da complexidade operacional, a eficiência é a nossa lâmina."
 
-⚡ VISÃO GERAL DA OPERAÇÃO
+⚡ Visão Geral da Operação
+Sistema tático de alta performance desenvolvido para o gerenciamento de filas, auditoria de procedimentos de saúde, tratativas de contato e controle de prazos regulatórios (SLA).
 
-Este sistema tático de alta performance foi projetado para o gerenciamento implacável de filas, auditoria de procedimentos de saúde, tratativas de contato e controle rigoroso de prazos regulatórios (SLA).
+A aplicação opera 100% no navegador (client-side), garantindo privacidade e total independência de servidores externos, com armazenamento persistente isolado por operador.
 
-Desenvolvido para rodar 100% no navegador (client-side) com máxima privacidade e zero dependência de servidores externos, a aplicação opera com criptografia local e armazenamento persistente isolado por operador.
+🛠️ Módulos de Utilitários Locais
+1. Conversor de PDF para JPEG / ZIP
+Processamento Local: Renderiza e converte documentos ou laudos em PDF diretamente na sua máquina.
 
-🛠️ MÓDULOS DE UTILITÁRIOS LOCAIS
+Múltiplas Opções de Download: Permite visualizar páginas individualmente para salvamento em JPEG ou compactar todo o lote em um arquivo .zip.
 
-1. Conversor de PDF para JPEG / ZIP Local
+2. Otimizador e Melhorador de Imagens
+Correção Avançada: Ajusta contraste, brilho e nitidez de exames e laudos em tempo real.
 
-Processamento 100% Local: Carregue qualquer documento ou laudo em formato PDF para que seja renderizado e convertido instantaneamente na sua máquina.
+Modo Documento (P&B Nítido): Filtro de escala de cinza em alta definição para destacar textos e recuperar a legibilidade sem cortes ou perda de bordas.
 
-Múltiplas Opções de Download: Visualize cada página individualmente e baixe em imagem JPEG de alta qualidade ou compacte todas as páginas em um arquivo .zip automático.
+🎯 Funcionalidades Táticas Principais
+Gestão e Fila de Casos: Controle de beneficiários com filtros por operadora e status, busca textual e alternância de visualização entre Tabela e Quadro Kanban.
 
-2. Otimizador e Melhorador de Visibilidade de Imagens
+Monitor de SLA Regulatório: Contagem regressiva automatizada com alertas visuais para prevenção de estouros de prazos críticos.
 
-Correção Avançada sem Cortes: Carregue exames, laudos ou documentos e ajuste o contraste, o brilho e a nitidez em tempo real direto na tela.
+Sub-Abas de Detalhamento: Gestão segmentada de Consultas, Exames e Guias/Autorizações, incluindo duplicação rápida e cópia estruturada de itens.
 
-Modo Documento (P&B Nítido): Filtro inteligente de escala de cinza em alta definição para destacar textos ilegíveis, preservando a integridade visual completa sem cortes ou perda de bordas.
+Histórico de Tratativas: Registro de tentativas de contato por canais (Telefone, WhatsApp, E-mail, Portal) com rastreabilidade por operador.
 
-🎯 FUNCIONALIDADES TÁTICAS PRINCIPAIS
+Agenda Tática e Alertas: Sistema de lembretes com pop-ups de prioridade e alertas para liberação de senhas e recontatos.
 
-Gestão e Fila de Casos: Controle completo de beneficiários com filtros dinâmicos por operadora, status de tratativa, busca textual instantânea e visualização alternável entre Tabela e Quadro Kanban.
+Mensageria e Relatórios: Gerador de templates de comunicação e espelhos de relatório prontos para exportação.
 
-Monitor de SLA Regulatório: Contagem regressiva automatizada com alertas visuais dinâmicos para evitar o estouro de prazos críticos.
-
-Sub-Abas de Detalhamento: Gerenciamento isolado para Consultas, Exames e Autorizações/Guias, com opções de duplicação rápida de procedimentos e cópia estruturada.
-
-Histórico de Tratativas & Auditoria: Registro detalhado de tentativas de contato divididas por canais (Telefone, WhatsApp, E-mail, Portal) com rastreabilidade completa por operador.
-
-Agenda Tática e Alertas Sonoros: Sistema de lembretes automáticos com pop-ups de prioridade e alertas sonoros programados para liberação de senhas e recontatos.
-
-Mensageria Rápida e Relatórios: Gerador automatizado de templates de comunicação e espelho de relatório pronto para impressão ou exportação em PDF.
-
-Backup e Portabilidade: Ferramentas integradas para exportação e importação de dados via arquivos JSON em ambiente isolado e seguro.
+Backup e Portabilidade: Ferramentas integradas para exportação e importação de dados via arquivos JSON em ambiente seguro.
