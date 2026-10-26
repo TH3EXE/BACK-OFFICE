@@ -1,0 +1,2241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BACKOFFICE // GESTÃO TÁTICA</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+  <!-- JSZip -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            hap: {
+              primary: '#00539f',
+              secondary: '#00a859',
+              lightBg: '#f8fafc',
+              cardLight: '#ffffff',
+              borderLight: '#e2e8f0',
+              darkBg: '#0f172a',
+              cardDark: '#1e293b',
+              borderDark: '#334155'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .pulse-alarm { animation: pulse-subtle 1.5s infinite ease-in-out; }
+    select option { background-color: #ffffff; color: #1e293b; }
+    .dark select option { background-color: #1e293b; color: #f8fafc; }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-anim { animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  </style>
+</head>
+<body class="bg-hap-lightBg text-slate-800 dark:bg-hap-darkBg dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-hap-primary selection:text-white">
+
+  <!-- TELA DE LOGIN -->
+  <div id="loginScreen" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl w-full max-w-md p-8 shadow-2xl relative modal-anim">
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 rounded-full bg-hap-primary/10 flex items-center justify-center text-hap-primary dark:text-hap-secondary mx-auto mb-3">
+          <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+        </div>
+        <h1 class="font-bold text-2xl text-hap-primary dark:text-white tracking-wide">BACKOFFICE</h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Gestão de Operações e Fila // Autenticação</p>
+      </div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4 text-xs font-medium">
+        <div>
+          <label class="block text-slate-600 dark:text-slate-300 mb-1">OPERADOR RESPONSÁVEL</label>
+          <select id="loginOperatorSelect" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary focus:outline-none"></select>
+        </div>
+
+        <div>
+          <label class="block text-slate-600 dark:text-slate-300 mb-1">CHAVE DE ACESSO / SENHA</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block text-slate-600 dark:text-slate-300 mb-1">BASE DE DADOS DE TRABALHO</label>
+          <select id="loginBaseSelect" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 font-semibold rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary focus:outline-none">
+            <option value="CAC">CÉLULA CAC</option>
+            <option value="NOVO_FORMATO">CÉLULA NOVO FORMATO</option>
+          </select>
+        </div>
+
+        <div id="loginErrorMsg" class="hidden text-rose-600 text-center text-xs font-semibold bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 py-2 rounded-lg">
+          Senha incorreta para o operador selecionado.
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-hap-primary hover:bg-blue-700 text-white font-bold rounded-lg tracking-wide transition shadow-md shadow-blue-500/20 mt-2">
+          ACESSAR SISTEMA
+        </button>
+      </form>
+
+      <div class="mt-5 pt-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
+        <span class="text-slate-500">Novo operador?</span>
+        <button type="button" onclick="openNewOperatorModal()" class="text-hap-primary dark:text-hap-secondary hover:underline font-semibold">
+          + Cadastrar Novo Operador
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER PRINCIPAL -->
+  <header class="bg-hap-cardLight dark:bg-hap-cardDark border-b border-hap-borderLight dark:border-hap-borderDark px-4 lg:px-6 py-3 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-30 shadow-sm">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-hap-primary text-white flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="font-bold text-base text-hap-primary dark:text-white tracking-wide">BACKOFFICE</h1>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">Gestão Integrada de Fila e Atendimento</p>
+      </div>
+    </div>
+
+    <div class="hidden 2xl:flex items-center gap-3 text-xs font-medium">
+      <div class="bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center gap-2">
+        <i data-lucide="phone-outgoing" class="w-3.5 h-3.5 text-hap-primary"></i>
+        <span class="text-slate-500">CONTATOS:</span>
+        <b id="kpiTodayContacts" class="text-hap-primary font-bold">0</b>
+      </div>
+
+      <div class="bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center gap-2">
+        <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-hap-secondary"></i>
+        <span class="text-slate-500">CONCLUÍDOS:</span>
+        <b id="kpiTodayDone" class="text-hap-secondary font-bold">0</b>
+      </div>
+    </div>
+
+    <div class="hidden md:flex items-center gap-2 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">
+      <i data-lucide="clock" class="w-4 h-4 text-hap-primary"></i>
+      <span id="tacticalClockDisplay">--/--/---- // --:--:--</span>
+    </div>
+
+    <div class="hidden lg:flex items-center gap-2.5 text-xs font-medium">
+      <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800">
+        <i data-lucide="database" class="w-3.5 h-3.5 text-hap-primary"></i>
+        <span class="text-slate-500">BASE:</span>
+        <span id="headerCurrentBase" class="text-hap-primary dark:text-hap-secondary font-bold uppercase">CAC</span>
+      </div>
+
+      <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800">
+        <i data-lucide="moon" id="themeIcon" class="w-3.5 h-3.5 text-slate-600 dark:text-amber-400"></i>
+        <select id="themeSelector" onchange="toggleThemeMode(this.value)" class="bg-transparent text-slate-700 dark:text-slate-200 text-xs focus:outline-none cursor-pointer font-semibold">
+          <option value="light">MODO CLARO</option>
+          <option value="dark">MODO ESCURO</option>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800">
+        <span class="w-2 h-2 rounded-full bg-hap-secondary animate-pulse"></span>
+        <span class="text-slate-500">OP:</span>
+        <span id="headerCurrentOperator" class="text-slate-800 dark:text-white font-bold uppercase">BATMAN</span>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 flex-wrap">
+      <button onclick="openPdfConverterModal()" title="Converter PDF para imagens JPEG ou ZIP" class="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+        <i data-lucide="file-stack" class="w-3.5 h-3.5 text-hap-primary"></i>
+        <span class="hidden xl:inline">PDF ➔ JPG</span>
+      </button>
+
+      <button onclick="openImageEnhancerModal()" title="Melhorar nitidez de laudos" class="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+        <i data-lucide="wand-2" class="w-3.5 h-3.5 text-hap-secondary"></i>
+        <span class="hidden xl:inline">IMAGEM</span>
+      </button>
+
+      <button onclick="exportOperatorBackup()" title="Exportar Backup JSON completo" class="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+        <span class="hidden xl:inline">EXPORTAR BASE</span>
+      </button>
+
+      <button onclick="triggerImportBackup()" title="Importar Backup JSON" class="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+        <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+        <span class="hidden xl:inline">IMPORTAR</span>
+      </button>
+      <input type="file" id="importJsonInput" accept=".json" class="hidden" onchange="importOperatorBackup(event)">
+
+      <button onclick="logoutOperator()" title="Sair do sistema" class="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-600 hover:text-white text-rose-600 border border-rose-200 dark:border-rose-900 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+        <span>SAIR</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- PAINEL PRINCIPAL -->
+  <main class="flex-1 p-3 lg:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4 max-w-[1920px] mx-auto w-full">
+
+    <!-- FILA DE CASOS (ESQUERDA) -->
+    <section class="lg:col-span-4 flex flex-col gap-3 bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl p-4 shadow-sm">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="users" class="w-4 h-4 text-hap-primary"></i>
+          <h2 class="text-sm font-bold tracking-wide text-slate-800 dark:text-white">FILA DE CASOS</h2>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <button onclick="toggleQueueViewMode()" id="toggleViewBtn" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 transition flex items-center gap-1">
+            <i data-lucide="layout-grid" class="w-3 h-3"></i>
+            <span id="toggleViewBtnText">KANBAN</span>
+          </button>
+
+          <div class="text-xs font-medium text-slate-500 flex gap-1.5">
+            <span class="bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800"><b id="totalCasesCount" class="text-hap-primary">0</b> Tot</span>
+            <span class="bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800"><b id="openCasesCount" class="text-hap-secondary">0</b> Ab</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-2.5">
+        <div class="relative flex items-center gap-1.5">
+          <div class="relative flex-1">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+            <input type="text" id="searchInput" oninput="renderQueue()" placeholder="Pesquisar Nome, Carteirinha..." 
+                   class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-hap-primary transition">
+          </div>
+
+          <button onclick="toggleUnsuccessfulFilter()" id="btnFilterUnsuccessful" title="Filtrar Insucessos" class="px-2.5 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-rose-600 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+            <i data-lucide="phone-off" class="w-4 h-4"></i>
+          </button>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[10px] uppercase font-semibold text-slate-500 block mb-1">Operadora</label>
+            <select id="operatorFilter" onchange="renderQueue()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-hap-primary">
+              <option value="TODAS">TODAS OPERADORAS</option>
+              <option value="NDI SP/RJ">NDI SP/RJ</option>
+              <option value="NDI MINAS">NDI MINAS</option>
+              <option value="HAPVIDA">HAPVIDA</option>
+              <option value="CCG">CCG</option>
+              <option value="CLINIPAM">CLINIPAM</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-[10px] uppercase font-semibold text-slate-500 block mb-1">Status Backoffice</label>
+            <select id="statusFilter" onchange="renderQueue()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-hap-primary">
+              <option value="TODOS">TODOS OS STATUS</option>
+              <option value="NOVO">NOVO</option>
+              <option value="EM CONTATO">EM CONTATO</option>
+              <option value="EM ANDAMENTO">EM ANDAMENTO</option>
+              <option value="AGUARD. AGENDAMENTO">AGUARD. AGENDAMENTO</option>
+              <option value="AGUARD. AUTORIZAÇÃO">AGUARD. AUTORIZAÇÃO</option>
+              <option value="INSUCESSO DE CONTATO">INSUCESSO DE CONTATO</option>
+              <option value="PENDENTE">PENDENTE</option>
+              <option value="CONCLUÍDO">CONCLUÍDO</option>
+            </select>
+          </div>
+        </div>
+
+        <button onclick="openAddPatientModal()" class="w-full py-2 bg-hap-primary hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/20">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          <span>CADASTRAR NOVO CASO</span>
+        </button>
+      </div>
+
+      <!-- LISTA / KANBAN -->
+      <div id="queueContainer" class="flex-1 overflow-y-auto max-h-[calc(100vh-280px)] border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 p-1.5">
+        <table id="queueTableView" class="w-full text-left text-xs">
+          <thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold text-[10px] uppercase sticky top-0 rounded">
+            <tr>
+              <th class="p-2.5">Beneficiário / Carteirinha</th>
+              <th class="p-2.5 text-right">Status / SLA</th>
+            </tr>
+          </thead>
+          <tbody id="queueTableBody" class="divide-y divide-slate-200 dark:divide-slate-800"></tbody>
+        </table>
+
+        <div id="queueKanbanView" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs"></div>
+      </div>
+    </section>
+
+    <!-- PAINEL DIREITO: FICHA DO BENEFICIÁRIO & SUB-ABAS -->
+    <section class="lg:col-span-8 flex flex-col gap-4">
+      
+      <!-- FICHA BASE -->
+      <div class="bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl p-4 shadow-sm relative">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-3 flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <i data-lucide="shield-check" class="w-4 h-4 text-hap-secondary"></i>
+            <h2 class="text-sm font-bold text-slate-800 dark:text-white tracking-wide">DADOS DO BENEFICIÁRIO</h2>
+          </div>
+          
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <button onclick="openPatientDetailsPopup()" title="Visualizar ficha completa em pop-up" class="px-2.5 py-1.5 bg-hap-primary/10 hover:bg-hap-primary hover:text-white text-hap-primary border border-hap-primary/30 rounded-lg text-xs font-bold transition flex items-center gap-1">
+              <i data-lucide="eye" class="w-3.5 h-3.5"></i> VER COMPLETO
+            </button>
+
+            <button onclick="openMsgGeneratorModal()" title="Gerar Mensagem" class="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+              <i data-lucide="message-square" class="w-3.5 h-3.5 text-hap-secondary"></i> MENSAGEM
+            </button>
+
+            <button onclick="openEditPatientModal()" title="Editar Ficha" class="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5 text-hap-primary"></i> EDITAR
+            </button>
+
+            <button onclick="copyPatientDetails()" title="Copiar Ficha" class="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i> COPIAR
+            </button>
+
+            <span id="badgeCurrentStatus" class="px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/50 text-hap-primary border border-blue-200 dark:border-blue-800">
+              SELECIONE UM CASO
+            </span>
+          </div>
+        </div>
+
+        <!-- MONITOR SLA & TAGS -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
+          <div class="md:col-span-5 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2 text-slate-500">
+              <i data-lucide="hourglass" class="w-4 h-4 text-hap-primary"></i>
+              <span class="text-[10px] uppercase font-semibold">PRAZO LIMITE ANS:</span>
+            </div>
+            <div id="displaySlaTimer" class="font-bold text-xs bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800">
+              --- CALCULANDO ---
+            </div>
+          </div>
+
+          <div class="md:col-span-7 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-2">
+            <span class="text-[10px] font-semibold text-slate-500 flex items-center gap-1">
+              <i data-lucide="tag" class="w-3.5 h-3.5 text-hap-primary"></i> TAGS:
+            </span>
+            <div id="patientTagsContainer" class="flex gap-1.5 flex-wrap flex-1"></div>
+            <button onclick="openTagSelectorModal()" class="text-[11px] text-hap-primary hover:underline font-bold">+ GERENCIAR</button>
+          </div>
+        </div>
+
+        <!-- DADOS PRINCIPAIS DO BENEFICIÁRIO (INCLUINDO TELEFONE, WHATSAPP E E-MAIL) -->
+        <div id="displayFieldsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs mb-3">
+          <div class="col-span-1 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-slate-400 text-[10px] font-semibold block mb-0.5">CARTEIRINHA</span>
+            <div id="displayCarteirinha" class="text-slate-800 dark:text-white font-bold truncate">---</div>
+          </div>
+          <div class="col-span-2 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-slate-400 text-[10px] font-semibold block mb-0.5">NOME COMPLETO</span>
+            <div id="displayName" class="text-slate-800 dark:text-white font-bold truncate">Nenhum selecionado</div>
+          </div>
+          <div class="col-span-1 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-slate-400 text-[10px] font-semibold block mb-0.5">CIDADE / UF</span>
+            <div id="displayFilial" class="text-slate-700 dark:text-slate-300 truncate font-medium">---</div>
+          </div>
+
+          <div class="col-span-1 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-slate-400 text-[10px] font-semibold block mb-0.5">OPERADORA</span>
+            <div id="displayOperadora" class="text-hap-primary font-bold truncate">---</div>
+          </div>
+          <div class="col-span-1 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-slate-400 text-[10px] font-semibold block mb-0.5">PLANO / REDE</span>
+            <div id="displayPlano" class="text-slate-700 dark:text-slate-300 truncate font-medium">---</div>
+          </div>
+          <div class="col-span-1 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-slate-400 text-[10px] font-semibold block mb-0.5">STATUS USUÁRIO</span>
+            <div id="displayStatusUsuario" class="text-hap-secondary font-bold truncate">---</div>
+          </div>
+          <div class="col-span-1 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-slate-400 text-[10px] font-semibold block mb-0.5">OPERADOR RESPONSÁVEL</span>
+            <div id="displayOperador" class="text-slate-700 dark:text-slate-300 truncate font-medium">---</div>
+          </div>
+
+          <!-- NOVOS CAMPOS: TELEFONE, WHATSAPP, E-MAIL -->
+          <div class="col-span-1 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-slate-400 text-[10px] font-semibold block mb-0.5">TELEFONE</span>
+            <div id="displayTelefone" class="text-slate-700 dark:text-slate-300 truncate font-medium">---</div>
+          </div>
+          <div class="col-span-1 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-slate-400 text-[10px] font-semibold block mb-0.5">WHATSAPP</span>
+            <div id="displayWhatsapp" class="text-hap-secondary font-bold truncate">---</div>
+          </div>
+          <div class="col-span-2 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-slate-400 text-[10px] font-semibold block mb-0.5">E-MAIL</span>
+            <div id="displayEmail" class="text-slate-700 dark:text-slate-300 truncate font-medium">---</div>
+          </div>
+        </div>
+
+        <!-- CAMPO DE OBSERVAÇÃO DO PACIENTE NA FICHA -->
+        <div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+          <div class="flex items-center gap-1.5 text-slate-500 font-semibold mb-1">
+            <i data-lucide="file-text" class="w-3.5 h-3.5 text-hap-primary"></i>
+            <span class="text-[10px] uppercase">OBSERVAÇÕES DO PACIENTE:</span>
+          </div>
+          <p id="displayObservacoes" class="text-slate-700 dark:text-slate-200 italic font-normal">Nenhuma observação informada.</p>
+        </div>
+
+        <!-- SUB-ABAS -->
+        <div class="mt-4 border-t border-slate-200 dark:border-slate-800 pt-3">
+          <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+            <div class="flex gap-2">
+              <button onclick="switchTab('consultas')" id="tabBtn-consultas" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold bg-hap-primary text-white shadow-sm">
+                Consultas (<span id="countConsultas">0</span>)
+              </button>
+              <button onclick="switchTab('exames')" id="tabBtn-exames" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-200">
+                Exames (<span id="countExames">0</span>)
+              </button>
+              <button onclick="switchTab('guias')" id="tabBtn-guias" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-200">
+                Guias / Autorizações (<span id="countGuias">0</span>)
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="copySubTabDetails()" title="Copiar itens desta aba" class="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+                <i data-lucide="copy-check" class="w-3.5 h-3.5 text-hap-secondary"></i> COPIAR ABA
+              </button>
+
+              <button onclick="openAddProcedureModal()" class="px-2.5 py-1.5 bg-hap-primary hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1 shadow-sm">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> + NOVO ITEM
+              </button>
+            </div>
+          </div>
+
+          <div id="tabContent" class="overflow-x-auto bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-2.5 min-h-[140px]"></div>
+        </div>
+      </div>
+
+      <!-- TRATATIVAS & LEMBRETES -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+        
+        <!-- TRATATIVAS -->
+        <div class="bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="clipboard-list" class="w-4 h-4 text-hap-primary"></i>
+                <h3 class="text-xs font-bold text-slate-800 dark:text-white">TRATATIVA &amp; HISTÓRICO</h3>
+              </div>
+              <span id="tentativasCount" class="text-[10px] bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800 text-slate-500 font-medium">
+                0 tentativas
+              </span>
+            </div>
+
+            <div id="historyLog" class="space-y-2 max-h-[160px] overflow-y-auto pr-1 text-xs"></div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
+            <button onclick="openLogContactModal()" class="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-semibold text-xs rounded-lg transition flex items-center justify-center gap-2">
+              <i data-lucide="phone-call" class="w-4 h-4 text-hap-primary"></i>
+              <span>+ REGISTRAR CONTATO</span>
+            </button>
+
+            <div class="flex items-center gap-2">
+              <select id="changeStatusSelect" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:border-hap-primary">
+                <option value="NOVO">NOVO</option>
+                <option value="PENDENTE">PENDENTE</option>
+                <option value="EM CONTATO">EM CONTATO</option>
+                <option value="EM ANDAMENTO">EM ANDAMENTO</option>
+                <option value="AGUARD. AUTORIZAÇÃO">AGUARD. AUTORIZAÇÃO</option>
+                <option value="AGUARD. AGENDAMENTO">AGUARD. AGENDAMENTO</option>
+                <option value="INSUCESSO DE CONTATO">INSUCESSO DE CONTATO</option>
+                <option value="CONCLUÍDO">CONCLUÍDO</option>
+              </select>
+              <button onclick="updatePatientStatus()" class="px-4 py-2 bg-hap-primary hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition shadow-sm">
+                ATUALIZAR
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- LEMBRETES -->
+        <div class="bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="clock" class="w-4 h-4 text-hap-secondary"></i>
+                <h3 class="text-xs font-bold text-slate-800 dark:text-white">ACOMPANHAMENTO / LEMBRETES</h3>
+              </div>
+              <span class="text-[10px] text-hap-secondary font-bold flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-hap-secondary animate-ping"></span> ATIVO
+              </span>
+            </div>
+
+            <div id="patientRemindersList" class="space-y-2 max-h-[140px] overflow-y-auto pr-1"></div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <button onclick="openAddReminderModal()" class="w-full py-2 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-hap-secondary hover:bg-emerald-100 font-semibold text-xs rounded-lg transition flex items-center justify-center gap-2">
+              <i data-lucide="alarm-clock" class="w-4 h-4"></i>
+              <span>+ AGENDAR RECONTATO / SENHA</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL DE VISUALIZAÇÃO COMPLETA EM POP-UP (ATUALIZADO COM TELEFONE, WHATSAPP E E-MAIL) -->
+  <div id="patientDetailsPopupModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl w-full max-w-4xl p-6 shadow-2xl modal-anim max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+        <h3 class="text-sm font-bold text-hap-primary dark:text-white flex items-center gap-2">
+          <i data-lucide="file-text" class="w-4 h-4 text-hap-secondary"></i> FICHA COMPLETA DO BENEFICIÁRIO // CONSOLIDADO
+        </h3>
+        <button onclick="closeModal('patientDetailsPopupModal')" class="text-slate-400 hover:text-slate-700 text-lg font-bold">&times;</button>
+      </div>
+
+      <div id="popupDetailsContent" class="space-y-4 text-xs"></div>
+
+      <div class="mt-6 pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+        <button onclick="closeModal('patientDetailsPopupModal')" class="px-5 py-2 bg-hap-primary text-white font-bold rounded-lg shadow-sm">FECHAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONVERSOR PDF -->
+  <div id="pdfConverterModal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl w-full max-w-2xl p-6 shadow-2xl modal-anim">
+      <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+        <h3 class="text-sm font-bold text-hap-primary dark:text-white flex items-center gap-2">
+          <i data-lucide="file-stack" class="w-4 h-4"></i> CONVERSOR DE PDF PARA JPEG / ZIP
+        </h3>
+        <button onclick="closeModal('pdfConverterModal')" class="text-slate-400 hover:text-slate-700">&times;</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="border-2 border-dashed border-slate-300 dark:border-slate-700 p-6 rounded-xl text-center cursor-pointer hover:border-hap-primary transition" onclick="document.getElementById('pdfFileInput').click()">
+          <i data-lucide="upload-cloud" class="w-8 h-8 mx-auto text-hap-primary mb-2"></i>
+          <span class="text-slate-700 dark:text-slate-200 font-bold block">CLIQUE PARA SELECIONAR UM ARQUIVO PDF</span>
+          <span class="text-slate-400 text-[10px]">Processamento 100% local e seguro no seu navegador.</span>
+          <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden" onchange="handlePdfUpload(event)">
+        </div>
+
+        <div id="pdfLoadingStatus" class="hidden text-center text-hap-primary font-bold animate-pulse">Renderizando páginas... Aguarde.</div>
+
+        <div id="pdfPreviewContainer" class="hidden space-y-3">
+          <div class="flex justify-between items-center bg-slate-100 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span id="pdfInfoText" class="text-hap-primary font-bold">Arquivo pronto</span>
+            <button onclick="downloadAllPagesZip()" class="px-3.5 py-1.5 bg-hap-secondary text-white font-bold rounded-lg hover:bg-emerald-700 transition flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="archive" class="w-3.5 h-3.5"></i> BAIXAR ZIP
+            </button>
+          </div>
+          <div id="pdfPagesThumbnails" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-60 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL MELHORADOR DE IMAGEM -->
+  <div id="imageEnhancerModal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl w-full max-w-3xl p-6 shadow-2xl modal-anim">
+      <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+        <h3 class="text-sm font-bold text-hap-primary dark:text-white flex items-center gap-2">
+          <i data-lucide="wand-2" class="w-4 h-4 text-hap-secondary"></i> MELHORADOR DE NITIDEZ DE LAUDOS E IMAGENS
+        </h3>
+        <button onclick="closeModal('imageEnhancerModal')" class="text-slate-400 hover:text-slate-700">&times;</button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div class="border-2 border-dashed border-slate-300 dark:border-slate-700 p-4 rounded-xl text-center cursor-pointer hover:border-hap-primary transition" onclick="document.getElementById('imageFileInput').click()">
+          <i data-lucide="image" class="w-7 h-7 mx-auto text-hap-secondary mb-1"></i>
+          <span class="text-slate-700 dark:text-slate-200 font-bold block">CARREGAR IMAGEM OU LAUDO (JPEG, PNG)</span>
+          <input type="file" id="imageFileInput" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+        </div>
+
+        <div id="enhancerWorkspace" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="space-y-3 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+            <span class="text-slate-800 dark:text-white font-bold block border-b border-slate-200 dark:border-slate-800 pb-2">AJUSTES DE IMAGEM</span>
+            
+            <div>
+              <label class="block text-slate-500 mb-1">CONTRASTE: <span id="valContrast">100</span>%</label>
+              <input type="range" id="rangeContrast" min="100" max="250" value="100" oninput="applyImageFilters()" class="w-full accent-hap-primary">
+            </div>
+
+            <div>
+              <label class="block text-slate-500 mb-1">BRILHO: <span id="valBrightness">100</span>%</label>
+              <input type="range" id="rangeBrightness" min="50" max="180" value="100" oninput="applyImageFilters()" class="w-full accent-hap-primary">
+            </div>
+
+            <div>
+              <button onclick="toggleGrayscale()" id="btnGrayscale" class="w-full py-2 bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 font-semibold hover:bg-slate-300 transition">
+                MODO DOCUMENTO (P&amp;B NÍTIDO)
+              </button>
+            </div>
+
+            <button onclick="downloadEnhancedImage()" class="w-full py-2.5 bg-hap-primary hover:bg-blue-700 text-white font-bold rounded-lg transition shadow-sm mt-2">
+              📥 BAIXAR IMAGEM OTIMIZADA
+            </button>
+          </div>
+
+          <div class="bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-center p-2 overflow-auto max-h-72">
+            <canvas id="enhancerCanvas" class="max-w-full h-auto object-contain"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL GERADOR DE MENSAGENS -->
+  <div id="msgGeneratorModal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl w-full max-w-lg p-6 shadow-2xl modal-anim">
+      <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+        <h3 class="text-sm font-bold text-hap-secondary flex items-center gap-2">
+          <i data-lucide="message-square" class="w-4 h-4"></i> GERADOR DE MENSAGENS RÁPIDAS
+        </h3>
+        <button onclick="closeModal('msgGeneratorModal')" class="text-slate-400 hover:text-slate-700">&times;</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-500 mb-1">TIPO DE MENSAGEM</label>
+          <select id="msgTemplateSelect" onchange="generateMessagePreview()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-200 focus:border-hap-secondary">
+            <option value="CONFIRMACAO_AGENDAMENTO">1. CONFIRMAÇÃO DE AGENDAMENTO</option>
+            <option value="SENHA_LIBERADA">2. AUTORIZAÇÃO / SENHA LIBERADA</option>
+            <option value="SOLICITACAO_DOCUMENTO">3. SOLICITAÇÃO DE DOCUMENTOS / LAUDO</option>
+            <option value="RECONTATO_INSUCESSO">4. TENTATIVA DE CONTATO SEM SUCESSO</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">PRÉVIA FORMATADA</label>
+          <textarea id="msgPreviewText" rows="6" readonly class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-3 text-slate-700 dark:text-slate-200 text-xs focus:outline-none"></textarea>
+        </div>
+
+        <div class="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-800">
+          <button onclick="openWhatsAppWeb()" class="px-3.5 py-2 bg-emerald-50 dark:bg-emerald-950/40 text-hap-secondary border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 rounded-lg font-bold transition flex items-center gap-1.5">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i> ABRIR WHATSAPP
+          </button>
+
+          <button onclick="copyGeneratedMessage()" class="px-4 py-2 bg-hap-secondary text-white font-bold rounded-lg hover:bg-emerald-700 transition shadow-sm">
+            📋 COPIAR TEXTO
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL TAGS -->
+  <div id="tagSelectorModal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl w-full max-w-md p-6 shadow-2xl modal-anim">
+      <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+        <h3 class="text-sm font-bold text-hap-primary dark:text-white flex items-center gap-2">
+          <i data-lucide="tag" class="w-4 h-4"></i> GERENCIAR TAGS TÁTICAS
+        </h3>
+        <button onclick="closeModal('tagSelectorModal')" class="text-slate-400 hover:text-slate-700">&times;</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div id="tagCheckboxList" class="space-y-2 bg-slate-50 dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 max-h-56 overflow-y-auto"></div>
+
+        <div class="flex justify-end pt-2 border-t border-slate-200 dark:border-slate-800">
+          <button onclick="closeModal('tagSelectorModal')" class="px-4 py-2 bg-hap-primary text-white font-bold rounded-lg shadow-sm">CONCLUÍDO</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR BENEFICIÁRIO (COM CAMPOS TELEFONE, WHATSAPP E E-MAIL) -->
+  <div id="editPatientModal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl w-full max-w-lg p-6 shadow-2xl modal-anim">
+      <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+        <h3 class="text-sm font-bold text-hap-primary dark:text-white flex items-center gap-2">
+          <i data-lucide="edit-3" class="w-4 h-4"></i> EDITAR FICHA DO BENEFICIÁRIO
+        </h3>
+        <button onclick="closeModal('editPatientModal')" class="text-slate-400 hover:text-slate-700">&times;</button>
+      </div>
+
+      <form id="editPatientForm" onsubmit="saveEditedPatient(event)" class="grid grid-cols-2 gap-3 text-xs">
+        <div class="col-span-2">
+          <label class="block text-slate-500 mb-1">NOME DO BENEFICIÁRIO*</label>
+          <input type="text" id="editPatientName" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 uppercase focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">CARTEIRINHA*</label>
+          <input type="text" id="editPatientCard" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">OPERADORA</label>
+          <select id="editPatientOperadora" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+            <option value="NDI SP/RJ">NDI SP/RJ</option>
+            <option value="NDI MINAS">NDI MINAS</option>
+            <option value="HAPVIDA">HAPVIDA</option>
+            <option value="CCG">CCG</option>
+            <option value="CLINIPAM">CLINIPAM</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">CIDADE / ESTADO</label>
+          <input type="text" id="editCitySearch" list="citiesDatalist" onchange="autoFillCityState('editCitySearch', 'editPatientFilial')" placeholder="Digite a cidade..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 uppercase focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">CIDADE - UF (AUTO)</label>
+          <input type="text" id="editPatientFilial" required readonly class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-hap-primary font-bold">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">PLANO / REDE</label>
+          <input type="text" id="editPatientPlano" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">STATUS DO USUÁRIO</label>
+          <select id="editPatientStatusUsuario" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+            <option value="ATIVO">ATIVO</option>
+            <option value="INATIVO / CANCELADO">INATIVO / CANCELADO</option>
+            <option value="SUSPENSO">SUSPENSO</option>
+            <option value="EM CARÊNCIA">EM CARÊNCIA</option>
+          </select>
+        </div>
+
+        <!-- NOVOS CAMPOS DE CONTATO (EDITAR) -->
+        <div>
+          <label class="block text-slate-500 mb-1">TELEFONE</label>
+          <input type="text" id="editPatientTelefone" placeholder="(11) 99999-9999" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">WHATSAPP</label>
+          <input type="text" id="editPatientWhatsapp" placeholder="(11) 99999-9999" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div class="col-span-2">
+          <label class="block text-slate-500 mb-1">E-MAIL</label>
+          <input type="email" id="editPatientEmail" placeholder="beneficiario@email.com" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div class="col-span-2">
+          <label class="block text-slate-500 mb-1">OBSERVAÇÕES DO PACIENTE</label>
+          <textarea id="editPatientObservacoes" rows="2" placeholder="Digite observações importantes sobre este paciente..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary"></textarea>
+        </div>
+
+        <div class="col-span-2 flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800 mt-2">
+          <button type="button" onclick="closeModal('editPatientModal')" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 rounded-lg font-semibold text-slate-600 dark:text-slate-300">CANCELAR</button>
+          <button type="submit" class="px-4 py-2 bg-hap-primary text-white font-bold rounded-lg shadow-sm">SALVAR ALTERAÇÕES</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- POP-UP ALERTA RECONTATO -->
+  <div id="popupReminderModal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-hap-cardLight dark:bg-hap-cardDark border-2 border-hap-secondary rounded-2xl w-full max-w-lg p-6 shadow-2xl pulse-alarm modal-anim">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-hap-secondary text-white flex items-center justify-center font-bold">
+            <i data-lucide="bell-ring" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-slate-800 dark:text-white">ALERTA DE RECONTATO</h3>
+            <p class="text-[10px] text-slate-500">BACKOFFICE // NOTIFICAÇÃO IMPORTANTE</p>
+          </div>
+        </div>
+        <span id="popupPriorityBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-600 border border-amber-200">
+          URGENTE
+        </span>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+          <div class="text-slate-500 flex justify-between">
+            <span>BENEFICIÁRIO:</span>
+            <span id="popupPatientName" class="text-slate-800 dark:text-white font-bold">---</span>
+          </div>
+          <div class="text-slate-500 flex justify-between">
+            <span>CARTEIRINHA:</span>
+            <span id="popupPatientCard" class="text-slate-700 dark:text-slate-300">---</span>
+          </div>
+          <div class="text-slate-500 flex justify-between">
+            <span>AGENDADO PARA:</span>
+            <span id="popupReminderTime" class="text-hap-primary font-bold">---</span>
+          </div>
+        </div>
+
+        <div class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-3.5 rounded-xl">
+          <span class="text-[10px] text-hap-secondary font-bold uppercase block mb-1">MOTIVO / AÇÃO:</span>
+          <p id="popupReminderNote" class="text-slate-800 dark:text-slate-100 font-semibold text-xs">---</p>
+        </div>
+      </div>
+
+      <div class="mt-5 pt-3 border-t border-slate-200 dark:border-slate-800 grid grid-cols-3 gap-2">
+        <button onclick="snoozeReminder(15)" class="py-2 px-2 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold hover:bg-slate-200 transition">
+          +15 MIN
+        </button>
+
+        <button onclick="openPatientFromPopup()" class="py-2 px-2 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-hap-primary rounded-lg text-xs font-semibold hover:bg-slate-200 transition">
+          ABRIR FICHA
+        </button>
+
+        <button onclick="completeReminderFromPopup()" class="py-2 px-2 bg-hap-secondary text-white font-bold rounded-lg text-xs hover:bg-emerald-700 transition shadow-sm">
+          CONCLUÍDO
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CADASTRAR OPERADOR -->
+  <div id="newOperatorModal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl w-full max-w-md p-6 shadow-2xl modal-anim">
+      <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+        <h3 class="text-sm font-bold text-hap-primary dark:text-white flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4"></i> CADASTRAR NOVO OPERADOR
+        </h3>
+        <button onclick="closeModal('newOperatorModal')" class="text-slate-400 hover:text-slate-700">&times;</button>
+      </div>
+
+      <form onsubmit="saveNewOperator(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-500 mb-1">NOME DO OPERADOR</label>
+          <input type="text" id="newOpName" required placeholder="Ex: ROBIN" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 uppercase focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">SENHA / CHAVE DE ACESSO</label>
+          <input type="password" id="newOpPassword" required placeholder="Senha de acesso" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+          <button type="button" onclick="closeModal('newOperatorModal')" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 rounded-lg font-semibold text-slate-600 dark:text-slate-300">CANCELAR</button>
+          <button type="submit" class="px-4 py-2 bg-hap-primary text-white font-bold rounded-lg shadow-sm">CADASTRAR</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL LEMBRETE -->
+  <div id="addReminderModal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+    <div class="bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl w-full max-w-md p-6 shadow-2xl modal-anim">
+      <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+        <h3 id="reminderModalTitle" class="text-sm font-bold text-hap-secondary flex items-center gap-2">
+          <i data-lucide="alarm-clock" class="w-4 h-4"></i> AGENDAR LEMBRETE / RECONTATO
+        </h3>
+        <button onclick="closeModal('addReminderModal')" class="text-slate-400 hover:text-slate-700">&times;</button>
+      </div>
+
+      <form id="reminderForm" onsubmit="saveReminder(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="editReminderId" value="">
+
+        <div>
+          <label class="block text-slate-500 mb-1">DATA E HORA DO RECONTATO</label>
+          <input type="datetime-local" id="reminderDatetime" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-secondary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">MOTIVO</label>
+          <select id="reminderReason" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-200 focus:border-hap-secondary">
+            <option value="Verificar Liberação de Senha / Autorização">Verificar Liberação de Senha / Autorização</option>
+            <option value="Acompanhar Efetivação de Agendamento">Acompanhar Efetivação de Agendamento</option>
+            <option value="Retorno de Contato pós-tentativa">Retorno de Contato pós-tentativa</option>
+            <option value="Confirmar Presença do Paciente">Confirmar Presença do Paciente</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">PRIORIDADE</label>
+          <select id="reminderPriority" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-200 focus:border-hap-secondary">
+            <option value="NORMAL">NORMAL</option>
+            <option value="URGENTE">URGENTE</option>
+            <option value="CRÍTICO">CRÍTICO (LIBERAÇÃO DE SENHA)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">OBSERVAÇÕES</label>
+          <textarea id="reminderNotes" rows="2" placeholder="Detalhes adicionais..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:border-hap-secondary"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+          <button type="button" onclick="closeModal('addReminderModal')" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 rounded-lg font-semibold text-slate-600 dark:text-slate-300">CANCELAR</button>
+          <button type="submit" class="px-4 py-2 bg-hap-secondary text-white font-bold rounded-lg shadow-sm">SALVAR</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL CONTATO -->
+  <div id="logContactModal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+    <div class="bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl w-full max-w-md p-6 shadow-2xl modal-anim">
+      <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+        <h3 id="contactModalTitle" class="text-sm font-bold text-hap-primary dark:text-white flex items-center gap-2">
+          <i data-lucide="phone-outgoing" class="w-4 h-4"></i> REGISTRAR CONTATO
+        </h3>
+        <button onclick="closeModal('logContactModal')" class="text-slate-400 hover:text-slate-700">&times;</button>
+      </div>
+
+      <form id="contactForm" onsubmit="saveContactLog(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="editHistoryIndex" value="">
+
+        <div>
+          <label class="block text-slate-500 mb-1">MEIO</label>
+          <select id="contactChannel" onchange="updateContactResultOptions()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-200 focus:border-hap-primary">
+            <option value="LIGAÇÃO TELEFÔNICA">LIGAÇÃO TELEFÔNICA</option>
+            <option value="WHATSAPP / MENSAGEM">WHATSAPP / MENSAGEM</option>
+            <option value="E-MAIL">E-MAIL</option>
+            <option value="PORTAL / SISTEMA">PORTAL / SISTEMA</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">RESULTADO</label>
+          <select id="contactResult" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-200 focus:border-hap-primary"></select>
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">DETALHES / ANOTAÇÕES</label>
+          <textarea id="contactNotes" required rows="3" placeholder="Informar detalhes..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 focus:border-hap-primary"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+          <button type="button" onclick="closeModal('logContactModal')" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 rounded-lg font-semibold text-slate-600 dark:text-slate-300">CANCELAR</button>
+          <button type="submit" class="px-4 py-2 bg-hap-primary text-white font-bold rounded-lg shadow-sm">SALVAR</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <datalist id="citiesDatalist"></datalist>
+
+  <!-- MODAL CADASTRAR NOVO CASO (COM CAMPOS TELEFONE, WHATSAPP E E-MAIL) -->
+  <div id="addPatientModal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+    <div class="bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl w-full max-w-lg p-6 shadow-2xl modal-anim">
+      <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+        <h3 class="text-sm font-bold text-hap-primary dark:text-white flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4"></i> CADASTRAR NOVO CASO
+        </h3>
+        <button onclick="closeModal('addPatientModal')" class="text-slate-400 hover:text-slate-700">&times;</button>
+      </div>
+
+      <form id="addPatientForm" onsubmit="saveNewPatient(event)" class="grid grid-cols-2 gap-3 text-xs">
+        <div class="col-span-2">
+          <label class="block text-slate-500 mb-1">NOME DO BENEFICIÁRIO*</label>
+          <input type="text" id="newPatientName" required placeholder="Nome Completo" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 uppercase focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">CARTEIRINHA*</label>
+          <input type="text" id="newPatientCard" required placeholder="Ex: 3010142671009" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">OPERADORA</label>
+          <select id="newPatientOperadora" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+            <option value="NDI SP/RJ">NDI SP/RJ</option>
+            <option value="NDI MINAS">NDI MINAS</option>
+            <option value="HAPVIDA">HAPVIDA</option>
+            <option value="CCG">CCG</option>
+            <option value="CLINIPAM">CLINIPAM</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">CIDADE</label>
+          <input type="text" id="newCitySearch" list="citiesDatalist" onchange="autoFillCityState('newCitySearch', 'newPatientFilial')" placeholder="Digite a cidade..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 uppercase focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">CIDADE - UF (AUTO)</label>
+          <input type="text" id="newPatientFilial" required readonly placeholder="Selecione..." class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-hap-primary font-bold">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">PLANO / REDE</label>
+          <input type="text" id="newPatientPlano" placeholder="Ex: GREEN SENIOR" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">STATUS INICIAL</label>
+          <select id="newPatientStatus" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+            <option value="NOVO">NOVO</option>
+            <option value="EM CONTATO">EM CONTATO</option>
+            <option value="EM ANDAMENTO">EM ANDAMENTO</option>
+            <option value="AGUARD. AUTORIZAÇÃO">AGUARD. AUTORIZAÇÃO</option>
+            <option value="AGUARD. AGENDAMENTO">AGUARD. AGENDAMENTO</option>
+          </select>
+        </div>
+
+        <!-- NOVOS CAMPOS DE CONTATO (CADASTRAR) -->
+        <div>
+          <label class="block text-slate-500 mb-1">TELEFONE</label>
+          <input type="text" id="newPatientTelefone" placeholder="(11) 99999-9999" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">WHATSAPP</label>
+          <input type="text" id="newPatientWhatsapp" placeholder="(11) 99999-9999" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div class="col-span-2">
+          <label class="block text-slate-500 mb-1">E-MAIL</label>
+          <input type="email" id="newPatientEmail" placeholder="beneficiario@email.com" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div class="col-span-2">
+          <label class="block text-slate-500 mb-1">OBSERVAÇÕES DO PACIENTE</label>
+          <textarea id="newPatientObservacoes" rows="2" placeholder="Digite observações ou anotações particulares sobre este paciente..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary"></textarea>
+        </div>
+
+        <div class="col-span-2 flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800 mt-2">
+          <button type="button" onclick="closeModal('addPatientModal')" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 rounded-lg font-semibold text-slate-600 dark:text-slate-300">CANCELAR</button>
+          <button type="submit" class="px-4 py-2 bg-hap-primary text-white font-bold rounded-lg shadow-sm">CADASTRAR</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL REGISTRAR PROCEDIMENTO / GUIA -->
+  <div id="addProcedureModal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+    <div class="bg-hap-cardLight dark:bg-hap-cardDark border border-hap-borderLight dark:border-hap-borderDark rounded-2xl w-full max-w-xl p-6 max-h-[90vh] overflow-y-auto shadow-2xl modal-anim">
+      <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+        <h3 id="procedureModalTitle" class="text-sm font-bold text-hap-primary dark:text-white flex items-center gap-2">
+          <i data-lucide="file-plus" class="w-4 h-4"></i> REGISTRAR ITEM / STATUS
+        </h3>
+        <button onclick="closeModal('addProcedureModal')" class="text-slate-400 hover:text-slate-700">&times;</button>
+      </div>
+
+      <form id="procedureForm" onsubmit="saveProcedure(event)" class="grid grid-cols-2 gap-3 text-xs">
+        <input type="hidden" id="editProcedureId" value="">
+
+        <div class="col-span-2">
+          <label class="block text-slate-500 mb-1">SUB-ABA DE DESTINO</label>
+          <select id="procCategory" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-200 focus:border-hap-primary">
+            <option value="consultas">CONSULTAS</option>
+            <option value="exames">EXAMES</option>
+            <option value="guias">GUIAS / AUTORIZAÇÕES</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">DATA</label>
+          <input type="date" id="procData" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">STATUS DO PROCEDIMENTO</label>
+          <select id="procStatus" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 font-bold text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+            <option value="SOLICITADO" class="text-slate-600">🔵 SOLICITADO / PENDENTE</option>
+            <option value="AGUARD. SENHA" class="text-amber-600">🟡 AGUARDANDO SENHA</option>
+            <option value="AUTORIZADO / SENHA LIBERADA" class="text-blue-600">🔵 AUTORIZADO / LIBERADO</option>
+            <option value="EFETIVADO" class="text-emerald-600">🟢 EFETIVADA / REALIZADA</option>
+            <option value="CANCELADO" class="text-rose-600">🔴 CANCELADA</option>
+            <option value="AUSENCIA" class="text-amber-500">🟡 AUSÊNCIA / NÃO COMPARECEU</option>
+          </select>
+        </div>
+
+        <div class="col-span-2">
+          <label class="block text-slate-500 mb-1">SOLICITAÇÃO / PROCEDIMENTO*</label>
+          <input type="text" id="procSolicitacao" required placeholder="Ex: CONSULTA CARDIOLOGIA / RESSONÂNCIA" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">MÉDICO</label>
+          <input type="text" id="procMedico" placeholder="Dr. Nome" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">ESPECIALIDADE</label>
+          <input type="text" id="procEspecialidade" placeholder="Especialidade" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">LOCAL</label>
+          <input type="text" id="procLocal" placeholder="Clínica / Hospital" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1">PROTOCOLO / GUIA</label>
+          <input type="text" id="procProtocolo" placeholder="Protocolo" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div class="col-span-2">
+          <label class="block text-slate-500 mb-1">ENDEREÇO COMPLETO</label>
+          <input type="text" id="procEndereco" placeholder="Endereço" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:border-hap-primary">
+        </div>
+
+        <div class="col-span-2 flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+          <button type="button" onclick="closeModal('addProcedureModal')" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 rounded-lg font-semibold text-slate-600 dark:text-slate-300">CANCELAR</button>
+          <button type="submit" class="px-4 py-2 bg-hap-primary text-white font-bold rounded-lg shadow-sm">SALVAR</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT DA APLICAÇÃO -->
+  <script>
+    const DEFAULT_OPERATORS = [
+      { name: "BATMAN", pass: "1234" },
+      { name: "RONNEY", pass: "1234" },
+    ];
+
+    const BRAZIL_CITIES = [
+      { city: "SÃO PAULO", uf: "SP" }, { city: "GUARULHOS", uf: "SP" }, { city: "SANTO ANDRÉ", uf: "SP" },
+      { city: "SÃO BERNARDO DO CAMPO", uf: "SP" }, { city: "OSASCO", uf: "SP" }, { city: "CAMPINAS", uf: "SP" },
+      { city: "SANTOS", uf: "SP" }, { city: "RIO DE JANEIRO", uf: "RJ" }, { city: "NITERÓI", uf: "RJ" },
+      { city: "BELO HORIZONTE", uf: "MG" }, { city: "CURITIBA", uf: "PR" }, { city: "PORTO ALEGRE", uf: "RS" }
+    ];
+
+    const AVAILABLE_TAGS = [
+      { id: "URGENTE", label: "🔥 URGENTE", color: "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800" },
+      { id: "NIP", label: "⚖️ NIP / LIMINAR", color: "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800" },
+      { id: "IDOSO", label: "👵 IDOSO / PREFERENCIAL", color: "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800" },
+      { id: "RETORNO", label: "💬 AGUARDANDO RETORNO", color: "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800" },
+      { id: "REDE_PROPRIA", label: "🏥 REDE PRÓPRIA", color: "bg-emerald-50 text-hap-secondary border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800" }
+    ];
+
+    const DEMO_PATIENTS = [
+      {
+        id: "p1",
+        carteirinha: "3010142671009",
+        nome: "ERMELINDA NERY OLIVEIRA",
+        filial: "GUARULHOS - SP",
+        cidade: "GUARULHOS - SP",
+        operadora: "NDI SP/RJ",
+        plano: "GREEN SENIOR (SP1014)",
+        statusUsuario: "ATIVO",
+        statusBackoffice: "NOVO",
+        operador: "BATMAN",
+        telefone: "(11) 2440-1029",
+        whatsapp: "(11) 98765-4321",
+        email: "ermelinda.nery@email.com",
+        observacoes: "Paciente idosa com prioridade. Necessita acompanhamento urgente de senha de catarata.",
+        createdAt: new Date().toISOString(),
+        tags: ["URGENTE", "REDE_PROPRIA"],
+        consultas: [
+          { id: "c1", data: "22/10/2026", solicitacao: "CONSULTA CARDIOLOGIA", medico: "DR. RICARDO", especialidade: "CARDIOLOGIA", local: "HOSP. SALVALUS", protocolo: "PROT-8820", status: "EFETIVADO" }
+        ],
+        exames: [
+          { id: "e1", data: "25/10/2026", solicitacao: "ECOCARDIOGRAMA", medico: "DR. FERNANDO", especialidade: "CARDIOLOGIA", local: "CENTRO DIAGNÓSTICO", protocolo: "EX-9011", status: "AGUARD. SENHA" }
+        ],
+        guias: [
+          { id: "g1", data: "20/10/2026", solicitacao: "GUIA CIRÚRGICA DE CATARATA", medico: "DRA. ANA", especialidade: "OFTALMOLOGIA", local: "AUDITORIA HAPVIDA", protocolo: "SNH-449201", status: "AGUARD. SENHA" }
+        ],
+        historico: [{ data: "22/10/2026 09:15", operador: "SYSTEM", detalhe: "Caso cadastrado no sistema." }],
+        lembretes: []
+      }
+    ];
+
+    const CHANNEL_RESULT_OPTIONS = {
+      "LIGAÇÃO TELEFÔNICA": ["CONTATO COM SUCESSO", "CAIXA POSTAL", "OCUPADO", "NÃO ATENDEU", "NÚMERO INVÁLIDO"],
+      "WHATSAPP / MENSAGEM": ["MENSAGEM ENVIADA", "RESPONDIDO COM SUCESSO", "NÃO POSSUI WHATSAPP"],
+      "E-MAIL": ["E-MAIL ENVIADO", "RETORNOU INVÁLIDO", "CONFIRMADO VIA E-MAIL"],
+      "PORTAL / SISTEMA": ["SOLICITADA NO PORTAL", "AGUARDANDO AUDITORIA", "AUTORIZAÇÃO DEFERIDA", "INDEFERIDA"]
+    };
+
+    let currentOperator = null;
+    let currentBase = 'CAC';
+    let patients = [];
+    let operatorLogs = [];
+    let selectedPatientId = null;
+    let activeTab = 'consultas';
+    let currentTriggeredReminder = null;
+    let isKanbanView = false;
+    let filterOnlyUnsuccessful = false;
+    let pdfDoc = null, pdfImagesCache = [], originalImageObj = null, isGrayscaleActive = false;
+
+    window.onload = function() {
+      lucide.createIcons();
+      populateOperatorDropdown();
+      populateCitiesDatalist();
+      updateContactResultOptions();
+      startTacticalClock();
+
+      const savedTheme = localStorage.getItem('hap_theme') || 'light';
+      toggleThemeMode(savedTheme, false);
+
+      const savedOp = sessionStorage.getItem('hap_active_operator');
+      const savedBase = sessionStorage.getItem('hap_active_base');
+      if (savedOp && savedBase) {
+        currentOperator = savedOp;
+        currentBase = savedBase;
+        document.getElementById('loginScreen').classList.add('hidden');
+        loadOperatorData();
+        initDashboard();
+      }
+    };
+
+    function toggleThemeMode(mode, save = true) {
+      const htmlEl = document.documentElement;
+      const icon = document.getElementById('themeIcon');
+      const select = document.getElementById('themeSelector');
+      
+      if (mode === 'dark') {
+        htmlEl.classList.add('dark');
+        if (icon) icon.setAttribute('data-lucide', 'sun');
+      } else {
+        htmlEl.classList.remove('dark');
+        if (icon) icon.setAttribute('data-lucide', 'moon');
+      }
+      if (select) select.value = mode;
+      if (save) localStorage.setItem('hap_theme', mode);
+      lucide.createIcons();
+    }
+
+    function populateCitiesDatalist() {
+      const datalist = document.getElementById('citiesDatalist');
+      datalist.innerHTML = '';
+      BRAZIL_CITIES.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = `${item.city} - ${item.uf}`;
+        datalist.appendChild(opt);
+      });
+    }
+
+    function autoFillCityState(inputId, outputId) {
+      const val = document.getElementById(inputId).value.trim().toUpperCase();
+      const outputEl = document.getElementById(outputId);
+      const matched = BRAZIL_CITIES.find(c => `${c.city} - ${c.uf}` === val || c.city === val);
+      if (matched) outputEl.value = `${matched.city} - ${matched.uf}`;
+      else if (val.length > 2) outputEl.value = val.includes('-') ? val : `${val} - SP`;
+    }
+
+    function startTacticalClock() {
+      const clockEl = document.getElementById('tacticalClockDisplay');
+      setInterval(() => {
+        const now = new Date();
+        if (clockEl) clockEl.innerText = `${now.toLocaleDateString('pt-BR')} // ${now.toLocaleTimeString('pt-BR')}`;
+      }, 1000);
+    }
+
+    function updateContactResultOptions() {
+      const channel = document.getElementById('contactChannel').value;
+      const resultSelect = document.getElementById('contactResult');
+      const options = CHANNEL_RESULT_OPTIONS[channel] || CHANNEL_RESULT_OPTIONS["LIGAÇÃO TELEFÔNICA"];
+      resultSelect.innerHTML = '';
+      options.forEach(opt => {
+        const el = document.createElement('option');
+        el.value = opt;
+        el.innerText = opt;
+        resultSelect.appendChild(el);
+      });
+    }
+
+    // POP-UP DETALHES COMPLETOS COM TELEFONE, WHATSAPP E E-MAIL
+    function openPatientDetailsPopup() {
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return alert('Selecione um beneficiário primeiro.');
+
+      const content = document.getElementById('popupDetailsContent');
+      
+      let allProcs = [...(p.consultas||[]), ...(p.exames||[]), ...(p.guias||[])];
+      let procsHtml = allProcs.length === 0 ? '<p class="text-slate-400 italic">Nenhum procedimento registrado.</p>' : 
+        `<table class="w-full text-left text-xs border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+           <thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-[10px]">
+             <tr><th class="p-2">Tipo / Data</th><th class="p-2">Solicitação</th><th class="p-2">Local / Médico</th><th class="p-2">Protocolo</th><th class="p-2">Status</th></tr>
+           </thead>
+           <tbody class="divide-y divide-slate-200 dark:divide-slate-800">` +
+           allProcs.map(pr => `<tr><td class="p-2">${pr.data||'---'}</td><td class="p-2 font-bold">${pr.solicitacao||'---'}</td><td class="p-2">${pr.medico||'---'} (${pr.local||'---'})</td><td class="p-2 text-hap-primary font-bold">${pr.protocolo||'---'}</td><td class="p-2 font-semibold">${pr.status||'---'}</td></tr>`).join('') +
+         `</tbody></table>`;
+
+      let histHtml = (p.historico||[]).length === 0 ? '<p class="text-slate-400 italic">Sem histórico.</p>' :
+        (p.historico||[]).map(h => `<div class="bg-slate-50 dark:bg-slate-900 p-2 rounded border border-slate-200 dark:border-slate-800 text-[11px] mb-1"><b>[${h.data}] ${h.operador}:</b> ${h.detalhe}</div>`).join('');
+
+      content.innerHTML = `
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div><span class="text-slate-400 text-[10px] block">CARTEIRINHA</span><b>${p.carteirinha}</b></div>
+          <div class="col-span-2"><span class="text-slate-400 text-[10px] block">NOME COMPLETO</span><b>${p.nome}</b></div>
+          <div><span class="text-slate-400 text-[10px] block">CIDADE / UF</span><b>${p.filial || '---'}</b></div>
+          <div><span class="text-slate-400 text-[10px] block">OPERADORA</span><b class="text-hap-primary">${p.operadora}</b></div>
+          <div><span class="text-slate-400 text-[10px] block">PLANO</span><b>${p.plano || '---'}</b></div>
+          <div><span class="text-slate-400 text-[10px] block">STATUS</span><b class="text-hap-secondary">${p.statusBackoffice}</b></div>
+          <div><span class="text-slate-400 text-[10px] block">TELEFONE</span><b>${p.telefone || '---'}</b></div>
+          <div><span class="text-slate-400 text-[10px] block">WHATSAPP</span><b class="text-hap-secondary">${p.whatsapp || '---'}</b></div>
+          <div class="col-span-2"><span class="text-slate-400 text-[10px] block">E-MAIL</span><b>${p.email || '---'}</b></div>
+        </div>
+
+        <div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+          <span class="text-slate-400 text-[10px] uppercase font-semibold block mb-1">OBSERVAÇÕES DO PACIENTE:</span>
+          <p class="text-slate-700 dark:text-slate-200 font-medium">${p.observacoes || 'Nenhuma observação informada.'}</p>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-slate-800 dark:text-white mb-2 text-xs uppercase">Procedimentos, Consultas e Exames</h4>
+          ${procsHtml}
+        </div>
+
+        <div>
+          <h4 class="font-bold text-slate-800 dark:text-white mb-2 text-xs uppercase">Histórico e Tratativas</h4>
+          <div class="max-h-40 overflow-y-auto space-y-1">${histHtml}</div>
+        </div>
+      `;
+
+      document.getElementById('patientDetailsPopupModal').classList.remove('hidden');
+    }
+
+    // PDF CONVERTER & IMAGE ENHANCER
+    function openPdfConverterModal() {
+      document.getElementById('pdfFileInput').value = '';
+      document.getElementById('pdfPreviewContainer').classList.add('hidden');
+      document.getElementById('pdfLoadingStatus').classList.add('hidden');
+      document.getElementById('pdfConverterModal').classList.remove('hidden');
+    }
+
+    async function handlePdfUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      document.getElementById('pdfLoadingStatus').classList.remove('hidden');
+      pdfImagesCache = [];
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const totalPages = pdfDoc.numPages;
+        document.getElementById('pdfInfoText').innerText = `${file.name} (${totalPages} págs)`;
+        const thumbContainer = document.getElementById('pdfPagesThumbnails');
+        thumbContainer.innerHTML = '';
+
+        for (let i = 1; i <= totalPages; i++) {
+          const page = await pdfDoc.getPage(i);
+          const viewport = page.getViewport({ scale: 2.0 });
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height; canvas.width = viewport.width;
+          await page.render({ canvasContext: context, viewport: viewport }).promise;
+          const jpegUrl = canvas.toDataURL('image/jpeg', 0.92);
+          pdfImagesCache.push({ pageNum: i, dataUrl: jpegUrl });
+
+          const div = document.createElement('div');
+          div.className = 'bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-center space-y-1';
+          div.innerHTML = `
+            <img src="${jpegUrl}" class="w-full h-20 object-cover rounded-lg border">
+            <span class="text-[10px] text-slate-500 block">Pág. ${i}</span>
+            <a href="${jpegUrl}" download="pagina_${i}.jpg" class="block w-full py-1 bg-hap-primary text-white font-bold text-[10px] rounded-lg">BAIXAR</a>
+          `;
+          thumbContainer.appendChild(div);
+        }
+        document.getElementById('pdfLoadingStatus').classList.add('hidden');
+        document.getElementById('pdfPreviewContainer').classList.remove('hidden');
+      } catch (err) {
+        alert('Erro ao processar PDF: ' + err.message);
+        document.getElementById('pdfLoadingStatus').classList.add('hidden');
+      }
+    }
+
+    async function downloadAllPagesZip() {
+      if (pdfImagesCache.length === 0) return;
+      const zip = new JSZip();
+      pdfImagesCache.forEach(item => {
+        zip.file(`pagina_${item.pageNum}.jpg`, item.dataUrl.replace(/^data:image\/jpeg;base64,/, ""), { base64: true });
+      });
+      const content = await zip.generateAsync({ type: "blob" });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(content);
+      a.download = "paginas_convertidas.zip";
+      a.click();
+    }
+
+    function openImageEnhancerModal() {
+      document.getElementById('imageFileInput').value = '';
+      document.getElementById('enhancerWorkspace').classList.add('hidden');
+      document.getElementById('imageEnhancerModal').classList.remove('hidden');
+    }
+
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          originalImageObj = img;
+          document.getElementById('rangeContrast').value = 125;
+          document.getElementById('rangeBrightness').value = 105;
+          isGrayscaleActive = false;
+          applyImageFilters();
+          document.getElementById('enhancerWorkspace').classList.remove('hidden');
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function applyImageFilters() {
+      if (!originalImageObj) return;
+      const contrast = document.getElementById('rangeContrast').value;
+      const brightness = document.getElementById('rangeBrightness').value;
+      document.getElementById('valContrast').innerText = contrast;
+      document.getElementById('valBrightness').innerText = brightness;
+      const canvas = document.getElementById('enhancerCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = originalImageObj.width; canvas.height = originalImageObj.height;
+      ctx.filter = `contrast(${contrast}%) brightness(${brightness}%) ${isGrayscaleActive ? 'grayscale(100%)' : ''}`;
+      ctx.drawImage(originalImageObj, 0, 0);
+    }
+
+    function toggleGrayscale() {
+      isGrayscaleActive = !isGrayscaleActive;
+      applyImageFilters();
+    }
+
+    function downloadEnhancedImage() {
+      const canvas = document.getElementById('enhancerCanvas');
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/jpeg', 0.95);
+      a.download = `laudo_otimizado_${Date.now()}.jpg`;
+      a.click();
+    }
+
+    function calculatePatientSla(patient) {
+      if (!patient) return { text: "N/A", status: "normal" };
+      const created = patient.createdAt ? new Date(patient.createdAt) : new Date();
+      const diffDays = Math.floor((new Date() - created) / (1000 * 60 * 60 * 24));
+      const daysLeft = 7 - diffDays;
+
+      if (patient.statusBackoffice === 'CONCLUÍDO') return { text: "SLA CUMPRIDO", status: "success" };
+      if (daysLeft < 0) return { text: `ESTOURADO (${Math.abs(daysLeft)}d)`, status: "expired" };
+      if (daysLeft <= 2) return { text: `CRÍTICO (${daysLeft}d)`, status: "warning" };
+      return { text: `DENTRO DO PRAZO (${daysLeft}d)`, status: "normal" };
+    }
+
+    function toggleQueueViewMode() {
+      isKanbanView = !isKanbanView;
+      const textBtn = document.getElementById('toggleViewBtnText');
+      const tableEl = document.getElementById('queueTableView');
+      const kanbanEl = document.getElementById('queueKanbanView');
+      if (isKanbanView) {
+        textBtn.innerText = 'LISTA';
+        tableEl.classList.add('hidden');
+        kanbanEl.classList.remove('hidden');
+      } else {
+        textBtn.innerText = 'KANBAN';
+        kanbanEl.classList.add('hidden');
+        tableEl.classList.remove('hidden');
+      }
+      renderQueue();
+    }
+
+    function toggleUnsuccessfulFilter() {
+      filterOnlyUnsuccessful = !filterOnlyUnsuccessful;
+      const btn = document.getElementById('btnFilterUnsuccessful');
+      if (filterOnlyUnsuccessful) btn.classList.add('bg-rose-500', 'text-white', 'border-rose-600');
+      else btn.classList.remove('bg-rose-500', 'text-white', 'border-rose-600');
+      renderQueue();
+    }
+
+    function copyPatientDetails() {
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return alert('Selecione um paciente.');
+      const text = `FICHA BACKOFFICE\nNOME: ${p.nome}\nCARTEIRINHA: ${p.carteirinha}\nOPERADORA: ${p.operadora}\nTELEFONE: ${p.telefone||'---'}\nWHATSAPP: ${p.whatsapp||'---'}\nE-MAIL: ${p.email||'---'}\nSTATUS: ${p.statusBackoffice}\nOBSERVAÇÕES: ${p.observacoes || 'Sem obs'}`;
+      navigator.clipboard.writeText(text).then(() => alert('📋 Ficha copiada!'));
+    }
+
+    function copySubTabDetails() {
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return;
+      const items = p[activeTab] || [];
+      let text = `REGISTROS DE ${activeTab.toUpperCase()} - ${p.nome}\n\n`;
+      items.forEach((i, idx) => { text += `[${idx+1}] ${i.data} | ${i.solicitacao} | Status: ${i.status}\n`; });
+      navigator.clipboard.writeText(text).then(() => alert('📋 Aba copiada!'));
+    }
+
+    function openMsgGeneratorModal() {
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return alert('Selecione um paciente.');
+      generateMessagePreview();
+      document.getElementById('msgGeneratorModal').classList.remove('hidden');
+    }
+
+    function generateMessagePreview() {
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return;
+      const type = document.getElementById('msgTemplateSelect').value;
+      let msg = "";
+      if (type === "CONFIRMACAO_AGENDAMENTO") msg = `Olá ${p.nome}, seu agendamento foi confirmado pelo Backoffice. Fique atento aos dados do atendimento!`;
+      else if (type === "SENHA_LIBERADA") msg = `Olá ${p.nome}! Sua senha/autorização já está LIBERADA para atendimento. Carteirinha: ${p.carteirinha}`;
+      else if (type === "SOLICITACAO_DOCUMENTO") msg = `Prezado(a) ${p.nome}, solicitamos o envio do pedido médico atualizado para darmos seguimento ao seu processo.`;
+      else if (type === "RECONTATO_INSUCESSO") msg = `Olá ${p.nome}, tentamos contato recente sem sucesso. Retorne quando puder para prosseguirmos.`;
+      document.getElementById('msgPreviewText').value = msg;
+    }
+
+    function copyGeneratedMessage() {
+      navigator.clipboard.writeText(document.getElementById('msgPreviewText').value).then(() => alert('📋 Mensagem copiada!'));
+    }
+
+    function openWhatsAppWeb() {
+      const p = patients.find(x => x.id === selectedPatientId);
+      let phoneNum = p && p.whatsapp ? p.whatsapp.replace(/\D/g, '') : '';
+      window.open(`https://web.whatsapp.com/send?phone=${phoneNum}&text=${encodeURIComponent(document.getElementById('msgPreviewText').value)}`, '_blank');
+    }
+
+    // TAGS
+    function openTagSelectorModal() {
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return alert('Selecione um paciente.');
+      const container = document.getElementById('tagCheckboxList');
+      container.innerHTML = '';
+      if (!p.tags) p.tags = [];
+      AVAILABLE_TAGS.forEach(tag => {
+        const checked = p.tags.includes(tag.id);
+        const label = document.createElement('label');
+        label.className = 'flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-xs';
+        label.innerHTML = `
+          <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleTag('${tag.id}')" class="rounded text-hap-primary focus:ring-0">
+          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${tag.color}">${tag.label}</span>
+        `;
+        container.appendChild(label);
+      });
+      document.getElementById('tagSelectorModal').classList.remove('hidden');
+    }
+
+    function toggleTag(tagId) {
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return;
+      if (!p.tags) p.tags = [];
+      if (p.tags.includes(tagId)) p.tags = p.tags.filter(t => t !== tagId);
+      else p.tags.push(tagId);
+      saveOperatorData();
+      renderPatientDetails();
+    }
+
+    function renderPatientTags(patient) {
+      const container = document.getElementById('patientTagsContainer');
+      container.innerHTML = '';
+      if (!patient.tags || patient.tags.length === 0) {
+        container.innerHTML = `<span class="text-slate-400 italic text-[11px]">Nenhuma tag.</span>`;
+        return;
+      }
+      patient.tags.forEach(tagId => {
+        const t = AVAILABLE_TAGS.find(x => x.id === tagId);
+        if (t) {
+          const span = document.createElement('span');
+          span.className = `px-2 py-0.5 rounded-full text-[10px] font-bold border ${t.color}`;
+          span.innerText = t.label;
+          container.appendChild(span);
+        }
+      });
+    }
+
+    // LOGIN E OPERADORES
+    function getStoredOperators() {
+      const stored = localStorage.getItem('hap_operators_list');
+      if (stored) return JSON.parse(stored);
+      localStorage.setItem('hap_operators_list', JSON.stringify(DEFAULT_OPERATORS));
+      return DEFAULT_OPERATORS;
+    }
+
+    function populateOperatorDropdown() {
+      const select = document.getElementById('loginOperatorSelect');
+      const operators = getStoredOperators();
+      select.innerHTML = '';
+      operators.forEach(op => {
+        const opt = document.createElement('option');
+        opt.value = op.name; opt.innerText = op.name.toUpperCase();
+        select.appendChild(opt);
+      });
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const name = document.getElementById('loginOperatorSelect').value;
+      const base = document.getElementById('loginBaseSelect').value;
+      const pass = document.getElementById('loginPassword').value;
+      const matched = getStoredOperators().find(op => op.name === name && op.pass === pass);
+      if (matched) {
+        currentOperator = name; currentBase = base;
+        sessionStorage.setItem('hap_active_operator', currentOperator);
+        sessionStorage.setItem('hap_active_base', currentBase);
+        document.getElementById('loginScreen').classList.add('hidden');
+        loadOperatorData();
+        initDashboard();
+      } else {
+        document.getElementById('loginErrorMsg').classList.remove('hidden');
+      }
+    }
+
+    function openNewOperatorModal() {
+      document.getElementById('newOpName').value = '';
+      document.getElementById('newOpPassword').value = '';
+      document.getElementById('newOperatorModal').classList.remove('hidden');
+    }
+
+    function saveNewOperator(e) {
+      e.preventDefault();
+      const name = document.getElementById('newOpName').value.trim().toUpperCase();
+      const pass = document.getElementById('newOpPassword').value.trim();
+      if (!name || !pass) return alert('Preencha os campos.');
+      const ops = getStoredOperators();
+      if (ops.some(o => o.name === name)) return alert('Operador já existe.');
+      ops.push({ name, pass });
+      localStorage.setItem('hap_operators_list', JSON.stringify(ops));
+      populateOperatorDropdown();
+      closeModal('newOperatorModal');
+      alert('Operador cadastrado com sucesso!');
+    }
+
+    function logoutOperator() {
+      if (confirm('Deseja sair da sessão?')) {
+        sessionStorage.clear();
+        location.reload();
+      }
+    }
+
+    function getOperatorKey(key) { return `hap_data_${currentOperator}_${currentBase}_${key}`; }
+
+    function loadOperatorData() {
+      const raw = localStorage.getItem(getOperatorKey('patients'));
+      patients = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(DEMO_PATIENTS));
+      const logs = localStorage.getItem(getOperatorKey('logs'));
+      operatorLogs = logs ? JSON.parse(logs) : [];
+    }
+
+    function saveOperatorData() {
+      if (!currentOperator || !currentBase) return;
+      localStorage.setItem(getOperatorKey('patients'), JSON.stringify(patients));
+      localStorage.setItem(getOperatorKey('logs'), JSON.stringify(operatorLogs));
+      updateKpis();
+    }
+
+    function initDashboard() {
+      document.getElementById('headerCurrentOperator').innerText = currentOperator;
+      document.getElementById('headerCurrentBase').innerText = currentBase.replace('_', ' ');
+      renderQueue();
+      if (patients.length > 0) selectPatient(patients[0].id);
+      else clearPatientDetails();
+      updateKpis();
+      startReminderMonitor();
+    }
+
+    function updateKpis() {
+      const todayStr = new Date().toLocaleDateString('pt-BR');
+      let contacts = 0, done = 0;
+      patients.forEach(p => {
+        if (p.statusBackoffice === 'CONCLUÍDO') done++;
+        (p.historico || []).forEach(h => {
+          if (h.data && h.data.includes(todayStr) && h.operador !== 'SYSTEM') contacts++;
+        });
+      });
+      document.getElementById('kpiTodayContacts').innerText = contacts;
+      document.getElementById('kpiTodayDone').innerText = done;
+    }
+
+    function getFilteredPatients() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const opFilter = document.getElementById('operatorFilter').value;
+      const statusFilter = document.getElementById('statusFilter').value;
+
+      return patients.filter(p => {
+        const matchSearch = p.nome.toLowerCase().includes(search) || p.carteirinha.toLowerCase().includes(search);
+        const matchOp = opFilter === 'TODAS' || p.operadora === opFilter;
+        const matchStatus = statusFilter === 'TODOS' || p.statusBackoffice.includes(statusFilter);
+        const matchUnsuccessful = !filterOnlyUnsuccessful || p.statusBackoffice === 'INSUCESSO DE CONTATO';
+        return matchSearch && matchOp && matchStatus && matchUnsuccessful;
+      });
+    }
+
+    function renderQueue() {
+      const filtered = getFilteredPatients();
+
+      document.getElementById('totalCasesCount').innerText = patients.length;
+      document.getElementById('openCasesCount').innerText = patients.filter(p => p.statusBackoffice !== 'CONCLUÍDO').length;
+
+      if (isKanbanView) renderKanbanQueue(filtered);
+      else renderTableQueue(filtered);
+    }
+
+    function renderTableQueue(list) {
+      const tbody = document.getElementById('queueTableBody');
+      tbody.innerHTML = '';
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-slate-400 italic">Nenhum caso encontrado.</td></tr>`;
+        return;
+      }
+      list.forEach(p => {
+        const isSelected = p.id === selectedPatientId;
+        const tr = document.createElement('tr');
+        tr.className = `cursor-pointer transition border-b border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 ${isSelected ? 'bg-blue-50 dark:bg-blue-950/30 font-bold border-l-4 border-l-hap-primary' : ''}`;
+        tr.onclick = () => selectPatient(p.id);
+
+        const sla = calculatePatientSla(p);
+        let slaBadge = 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
+        if (sla.status === 'expired') slaBadge = 'bg-rose-50 text-rose-600 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400';
+        else if (sla.status === 'warning') slaBadge = 'bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400';
+        else if (sla.status === 'success') slaBadge = 'bg-emerald-50 text-hap-secondary border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400';
+
+        tr.innerHTML = `
+          <td class="p-2.5">
+            <div class="text-slate-800 dark:text-white font-bold truncate max-w-[190px]">${p.nome}</div>
+            <div class="text-[11px] text-slate-400">${p.carteirinha}</div>
+          </td>
+          <td class="p-2.5 text-right">
+            <span class="inline-block px-2 py-0.5 rounded text-[9px] font-bold mb-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">${p.statusBackoffice}</span>
+            <div><span class="px-1.5 py-0.5 rounded text-[8px] font-bold ${slaBadge}">${sla.text}</span></div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderKanbanQueue(list) {
+      const kanban = document.getElementById('queueKanbanView');
+      kanban.innerHTML = '';
+      if (list.length === 0) {
+        kanban.innerHTML = `<div class="col-span-2 p-4 text-center text-slate-400 italic">Nenhum caso na fila.</div>`;
+        return;
+      }
+      list.forEach(p => {
+        const isSelected = p.id === selectedPatientId;
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-xl border cursor-pointer transition ${isSelected ? 'border-hap-primary bg-blue-50 dark:bg-blue-950/30 shadow-sm' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300'}`;
+        card.onclick = () => selectPatient(p.id);
+        const sla = calculatePatientSla(p);
+        card.innerHTML = `
+          <div class="flex justify-between items-start mb-1.5">
+            <span class="text-slate-800 dark:text-white font-bold truncate max-w-[140px]">${p.nome}</span>
+            <span class="text-[9px] px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full font-bold">${p.statusBackoffice}</span>
+          </div>
+          <div class="text-[10px] text-slate-400 mb-1.5">Cart: ${p.carteirinha}</div>
+          <div class="flex justify-between items-center text-[9px]">
+            <span class="text-hap-primary font-bold">${p.operadora}</span>
+            <span class="text-slate-500">${sla.text}</span>
+          </div>
+        `;
+        kanban.appendChild(card);
+      });
+    }
+
+    function selectPatient(id) {
+      selectedPatientId = id;
+      renderQueue();
+      renderPatientDetails();
+    }
+
+    function renderPatientDetails() {
+      const p = patients.find(item => item.id === selectedPatientId);
+      if (!p) { clearPatientDetails(); return; }
+
+      document.getElementById('displayCarteirinha').innerText = p.carteirinha;
+      document.getElementById('displayName').innerText = p.nome;
+      document.getElementById('displayFilial').innerText = p.filial || '---';
+      document.getElementById('displayOperadora').innerText = p.operadora || 'NDI SP/RJ';
+      document.getElementById('displayPlano').innerText = p.plano || '---';
+      document.getElementById('displayStatusUsuario').innerText = p.statusUsuario || 'ATIVO';
+      document.getElementById('displayOperador').innerText = p.operador || currentOperator;
+      
+      // EXIBIR TELEFONE, WHATSAPP E E-MAIL NA FICHA PRINCIPAL
+      document.getElementById('displayTelefone').innerText = p.telefone || '---';
+      document.getElementById('displayWhatsapp').innerText = p.whatsapp || '---';
+      document.getElementById('displayEmail').innerText = p.email || '---';
+
+      document.getElementById('badgeCurrentStatus').innerText = p.statusBackoffice;
+      document.getElementById('changeStatusSelect').value = p.statusBackoffice;
+
+      const obsEl = document.getElementById('displayObservacoes');
+      if (p.observacoes && p.observacoes.trim() !== '') {
+        obsEl.innerText = p.observacoes;
+        obsEl.classList.remove('italic', 'text-slate-400');
+        obsEl.classList.add('text-slate-700', 'dark:text-slate-200');
+      } else {
+        obsEl.innerText = "Nenhuma observação informada.";
+        obsEl.classList.add('italic', 'text-slate-400');
+      }
+
+      document.getElementById('countConsultas').innerText = (p.consultas || []).length;
+      document.getElementById('countExames').innerText = (p.exames || []).length;
+      document.getElementById('countGuias').innerText = (p.guias || []).length;
+
+      const sla = calculatePatientSla(p);
+      document.getElementById('displaySlaTimer').innerText = sla.text;
+
+      renderPatientTags(p);
+      renderTabContent();
+      renderHistoryLog();
+      renderRemindersList();
+      lucide.createIcons();
+    }
+
+    function clearPatientDetails() {
+      document.getElementById('displayCarteirinha').innerText = '---';
+      document.getElementById('displayName').innerText = 'Nenhum selecionado';
+      document.getElementById('displayTelefone').innerText = '---';
+      document.getElementById('displayWhatsapp').innerText = '---';
+      document.getElementById('displayEmail').innerText = '---';
+      document.getElementById('displayObservacoes').innerText = 'Nenhuma observação informada.';
+      document.getElementById('tabContent').innerHTML = `<p class="text-center text-slate-400 py-6 text-xs">Selecione um beneficiário.</p>`;
+    }
+
+    function switchTab(tabName) {
+      activeTab = tabName;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.className = 'tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-200';
+      });
+      const activeBtn = document.getElementById(`tabBtn-${tabName}`);
+      if (activeBtn) activeBtn.className = 'tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold bg-hap-primary text-white shadow-sm';
+      renderTabContent();
+    }
+
+    function renderTabContent() {
+      const p = patients.find(x => x.id === selectedPatientId);
+      const container = document.getElementById('tabContent');
+      if (!p) { container.innerHTML = `<p class="text-center text-slate-400 py-4 text-xs">Nenhum beneficiário selecionado.</p>`; return; }
+
+      const items = p[activeTab] || [];
+      if (items.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 text-xs text-slate-400 space-y-2">
+            <p>Nenhum registro em <b>${activeTab.toUpperCase()}</b>.</p>
+            <button onclick="openAddProcedureModal()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-hap-primary rounded-lg font-bold hover:bg-slate-200">
+              + Adicionar Registro
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      let html = `<table class="w-full text-left text-xs"><thead class="text-[10px] text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase"><tr><th class="pb-2">Data</th><th class="pb-2">Solicitação</th><th class="pb-2">Médico / Local</th><th class="pb-2">Protocolo</th><th class="pb-2">Status</th><th class="pb-2 text-right">Ações</th></tr></thead><tbody class="divide-y divide-slate-200 dark:divide-slate-800">`;
+
+      items.forEach(item => {
+        let badgeColor = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+        const st = item.status || 'SOLICITADO';
+        if (st === 'EFETIVADO') badgeColor = 'bg-emerald-50 text-hap-secondary border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400';
+        else if (st === 'CANCELADO') badgeColor = 'bg-rose-50 text-rose-600 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400';
+        else if (st === 'AGUARD. SENHA') badgeColor = 'bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400';
+        else if (st === 'AUTORIZADO / SENHA LIBERADA') badgeColor = 'bg-blue-50 text-hap-primary border border-blue-200 dark:bg-blue-950/40 dark:text-blue-400';
+
+        html += `
+          <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/40">
+            <td class="py-2.5 text-slate-700 dark:text-slate-300 font-semibold">${item.data || '---'}</td>
+            <td class="py-2.5 text-slate-800 dark:text-white font-bold">${item.solicitacao || '---'}</td>
+            <td class="py-2.5 text-slate-600 dark:text-slate-400"><div>${item.medico || '---'}</div><div class="text-[10px] text-slate-400">${item.local || '---'}</div></td>
+            <td class="py-2.5 text-hap-primary font-bold">${item.protocolo || '---'}</td>
+            <td class="py-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeColor}">${st}</span></td>
+            <td class="py-2.5 text-right space-x-1">
+              <button onclick="editProcedure('${item.id}')" class="p-1 bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 text-hap-primary rounded border border-slate-300 dark:border-slate-700" title="Editar"><i data-lucide="edit-3" class="w-3 h-3"></i></button>
+              <button onclick="duplicateProcedure('${item.id}')" class="p-1 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 text-hap-secondary rounded border border-slate-300 dark:border-slate-700" title="Duplicar"><i data-lucide="copy" class="w-3 h-3"></i></button>
+              <button onclick="deleteProcedure('${item.id}')" class="p-1 bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 text-rose-600 rounded border border-slate-300 dark:border-slate-700" title="Excluir"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+            </td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function openAddProcedureModal() {
+      if (!selectedPatientId) return alert('Selecione um paciente.');
+      document.getElementById('editProcedureId').value = '';
+      document.getElementById('procedureModalTitle').innerHTML = `<i data-lucide="file-plus" class="w-4 h-4"></i> REGISTRAR ITEM`;
+      document.getElementById('procCategory').value = activeTab;
+      document.getElementById('procData').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('procSolicitacao').value = '';
+      document.getElementById('procMedico').value = '';
+      document.getElementById('procEspecialidade').value = '';
+      document.getElementById('procLocal').value = '';
+      document.getElementById('procProtocolo').value = '';
+      document.getElementById('procEndereco').value = '';
+      document.getElementById('procStatus').value = 'SOLICITADO';
+      document.getElementById('addProcedureModal').classList.remove('hidden');
+    }
+
+    function saveProcedure(e) {
+      e.preventDefault();
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return;
+      const editId = document.getElementById('editProcedureId').value;
+      const cat = document.getElementById('procCategory').value;
+      const rawDate = document.getElementById('procData').value;
+      let formattedDate = rawDate ? rawDate.split('-').reverse().join('/') : '---';
+
+      const obj = {
+        id: editId || 'proc_' + Date.now(),
+        data: formattedDate,
+        solicitacao: document.getElementById('procSolicitacao').value.trim().toUpperCase(),
+        medico: document.getElementById('procMedico').value.trim().toUpperCase(),
+        especialidade: document.getElementById('procEspecialidade').value.trim().toUpperCase(),
+        local: document.getElementById('procLocal').value.trim().toUpperCase(),
+        endereco: document.getElementById('procEndereco').value.trim().toUpperCase(),
+        protocolo: document.getElementById('procProtocolo').value.trim().toUpperCase(),
+        status: document.getElementById('procStatus').value
+      };
+
+      if (!p[cat]) p[cat] = [];
+      if (editId) {
+        const idx = p[cat].findIndex(i => i.id === editId);
+        if (idx !== -1) p[cat][idx] = obj;
+      } else {
+        p[cat].push(obj);
+      }
+      p.historico.unshift({ data: new Date().toLocaleString('pt-BR'), operador: currentOperator, detalhe: `Atualizado item em [${cat.toUpperCase()}]: ${obj.solicitacao} (${obj.status})` });
+      saveOperatorData();
+      closeModal('addProcedureModal');
+      renderPatientDetails();
+    }
+
+    function editProcedure(id) {
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return;
+      const item = (p[activeTab] || []).find(i => i.id === id);
+      if (!item) return;
+
+      document.getElementById('editProcedureId').value = item.id;
+      document.getElementById('procedureModalTitle').innerHTML = `<i data-lucide="edit-3" class="w-4 h-4"></i> EDITAR REGISTRO`;
+      document.getElementById('procCategory').value = activeTab;
+      let isoDate = new Date().toISOString().slice(0, 10);
+      if (item.data && item.data.includes('/')) {
+        const parts = item.data.split('/');
+        if (parts.length === 3) isoDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+      document.getElementById('procData').value = isoDate;
+      document.getElementById('procSolicitacao').value = item.solicitacao || '';
+      document.getElementById('procMedico').value = item.medico || '';
+      document.getElementById('procEspecialidade').value = item.especialidade || '';
+      document.getElementById('procLocal').value = item.local || '';
+      document.getElementById('procProtocolo').value = item.protocolo || '';
+      document.getElementById('procEndereco').value = item.endereco || '';
+      document.getElementById('procStatus').value = item.status || 'SOLICITADO';
+      document.getElementById('addProcedureModal').classList.remove('hidden');
+    }
+
+    function duplicateProcedure(id) {
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return;
+      const item = (p[activeTab] || []).find(i => i.id === id);
+      if (!item) return;
+      document.getElementById('editProcedureId').value = '';
+      document.getElementById('procCategory').value = activeTab;
+      document.getElementById('procData').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('procSolicitacao').value = `${item.solicitacao} (CÓPIA)`;
+      document.getElementById('procMedico').value = item.medico || '';
+      document.getElementById('procLocal').value = item.local || '';
+      document.getElementById('procStatus').value = 'SOLICITADO';
+      document.getElementById('addProcedureModal').classList.remove('hidden');
+    }
+
+    function deleteProcedure(id) {
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p || !confirm('Excluir este registro?')) return;
+      p[activeTab] = (p[activeTab] || []).filter(i => i.id !== id);
+      saveOperatorData();
+      renderPatientDetails();
+    }
+
+    function renderHistoryLog() {
+      const p = patients.find(x => x.id === selectedPatientId);
+      const container = document.getElementById('historyLog');
+      const countEl = document.getElementById('tentativasCount');
+      if (!p) { container.innerHTML = `<p class="text-slate-400 italic text-center py-2">Sem histórico.</p>`; countEl.innerText = '0 tentativas'; return; }
+
+      const hist = p.historico || [];
+      countEl.innerText = `${hist.filter(h => h.operador !== 'SYSTEM').length} tratativas`;
+      if (hist.length === 0) { container.innerHTML = `<p class="text-slate-400 italic text-center py-2">Nenhum registro.</p>`; return; }
+
+      container.innerHTML = '';
+      hist.forEach((h, idx) => {
+        const div = document.createElement('div');
+        div.className = 'bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1 relative group';
+        div.innerHTML = `
+          <div class="flex justify-between items-center text-[10px] text-slate-400">
+            <span class="text-hap-primary font-bold">${h.operador}</span>
+            <span>${h.data}</span>
+          </div>
+          <p class="text-slate-700 dark:text-slate-200 text-xs">${h.detalhe}</p>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function openLogContactModal() {
+      if (!selectedPatientId) return alert('Selecione um paciente.');
+      document.getElementById('contactForm').reset();
+      document.getElementById('editHistoryIndex').value = '';
+      updateContactResultOptions();
+      document.getElementById('logContactModal').classList.remove('hidden');
+    }
+
+    function saveContactLog(e) {
+      e.preventDefault();
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return;
+      const channel = document.getElementById('contactChannel').value;
+      const result = document.getElementById('contactResult').value;
+      const notes = document.getElementById('contactNotes').value.trim();
+
+      p.historico.unshift({ data: new Date().toLocaleString('pt-BR'), operador: currentOperator, detalhe: `[${channel}] ${result}. Obs: ${notes}` });
+      if (result.includes('INSUCESSO') || result.includes('CAIXA POSTAL') || result.includes('NÃO ATENDEU')) p.statusBackoffice = 'INSUCESSO DE CONTATO';
+      else if (result.includes('SUCESSO') || result.includes('RESPONDIDO')) p.statusBackoffice = 'EM CONTATO';
+
+      saveOperatorData();
+      closeModal('logContactModal');
+      renderPatientDetails();
+      renderQueue();
+    }
+
+    function updatePatientStatus() {
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return alert('Selecione um paciente.');
+      const newStatus = document.getElementById('changeStatusSelect').value;
+      if (p.statusBackoffice !== newStatus) {
+        const old = p.statusBackoffice;
+        p.statusBackoffice = newStatus;
+        p.historico.unshift({ data: new Date().toLocaleString('pt-BR'), operador: currentOperator, detalhe: `Status alterado de [${old}] para [${newStatus}]` });
+        saveOperatorData();
+        renderPatientDetails();
+        renderQueue();
+      }
+    }
+
+    function renderRemindersList() {
+      const p = patients.find(x => x.id === selectedPatientId);
+      const container = document.getElementById('patientRemindersList');
+      if (!p || !p.lembretes || p.lembretes.length === 0) {
+        container.innerHTML = `<p class="text-slate-400 italic text-center py-2 text-xs">Sem lembretes agendados.</p>`;
+        return;
+      }
+      container.innerHTML = '';
+      p.lembretes.forEach(r => {
+        const div = document.createElement('div');
+        const isDone = r.status === 'CONCLUIDO';
+        div.className = `p-2.5 rounded-xl border text-xs flex justify-between items-center ${isDone ? 'bg-slate-100 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-400 line-through' : 'bg-slate-50 dark:bg-slate-900 border-hap-secondary/30 text-slate-700 dark:text-slate-200'}`;
+        div.innerHTML = `
+          <div>
+            <div class="flex items-center gap-1.5"><span class="text-hap-secondary font-bold text-[10px]">[${r.priority}]</span><span class="font-bold text-hap-primary">${new Date(r.datetime).toLocaleString('pt-BR')}</span></div>
+            <div class="text-[11px] font-medium">${r.reason}</div>
+          </div>
+          <div class="flex gap-1">
+            ${!isDone ? `<button onclick="completeReminder('${r.id}')" class="p-1 bg-hap-secondary text-white rounded"><i data-lucide="check" class="w-3.5 h-3.5"></i></button>` : ''}
+            <button onclick="deleteReminder('${r.id}')" class="p-1 bg-rose-100 text-rose-600 rounded"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+      lucide.createIcons();
+    }
+
+    function openAddReminderModal() {
+      if (!selectedPatientId) return alert('Selecione um paciente.');
+      document.getElementById('reminderForm').reset();
+      const now = new Date(); now.setMinutes(now.getMinutes() + 30);
+      document.getElementById('reminderDatetime').value = now.toISOString().slice(0, 16);
+      document.getElementById('addReminderModal').classList.remove('hidden');
+    }
+
+    function saveReminder(e) {
+      e.preventDefault();
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return;
+      if (!p.lembretes) p.lembretes = [];
+      p.lembretes.push({
+        id: 'rem_' + Date.now(),
+        datetime: document.getElementById('reminderDatetime').value,
+        reason: document.getElementById('reminderReason').value,
+        priority: document.getElementById('reminderPriority').value,
+        notes: document.getElementById('reminderNotes').value.trim(),
+        status: 'PENDENTE'
+      });
+      saveOperatorData();
+      closeModal('addReminderModal');
+      renderRemindersList();
+    }
+
+    function completeReminder(id) {
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return;
+      const r = p.lembretes.find(x => x.id === id);
+      if (r) { r.status = 'CONCLUIDO'; saveOperatorData(); renderRemindersList(); }
+    }
+
+    function deleteReminder(id) {
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return;
+      p.lembretes = p.lembretes.filter(x => x.id !== id);
+      saveOperatorData();
+      renderRemindersList();
+    }
+
+    function startReminderMonitor() {
+      setInterval(() => {
+        const now = new Date();
+        patients.forEach(p => {
+          (p.lembretes || []).forEach(r => {
+            if (r.status === 'PENDENTE' && now >= new Date(r.datetime)) triggerReminderAlert(p, r);
+          });
+        });
+      }, 10000);
+    }
+
+    function triggerReminderAlert(p, r) {
+      currentTriggeredReminder = { patientId: p.id, reminderId: r.id };
+      document.getElementById('popupPatientName').innerText = p.nome;
+      document.getElementById('popupPatientCard').innerText = p.carteirinha;
+      document.getElementById('popupReminderTime').innerText = new Date(r.datetime).toLocaleString('pt-BR');
+      document.getElementById('popupReminderNote').innerText = r.reason;
+      document.getElementById('popupReminderModal').classList.remove('hidden');
+    }
+
+    function snoozeReminder(mins) {
+      if (!currentTriggeredReminder) return;
+      const p = patients.find(x => x.id === currentTriggeredReminder.patientId);
+      if (p) {
+        const r = p.lembretes.find(x => x.id === currentTriggeredReminder.reminderId);
+        if (r) {
+          const d = new Date(); d.setMinutes(d.getMinutes() + mins);
+          r.datetime = d.toISOString().slice(0, 16);
+          saveOperatorData();
+        }
+      }
+      closeModal('popupReminderModal');
+    }
+
+    function openPatientFromPopup() {
+      if (currentTriggeredReminder) { selectPatient(currentTriggeredReminder.patientId); closeModal('popupReminderModal'); }
+    }
+
+    function completeReminderFromPopup() {
+      if (currentTriggeredReminder) {
+        const p = patients.find(x => x.id === currentTriggeredReminder.patientId);
+        if (p) {
+          const r = p.lembretes.find(x => x.id === currentTriggeredReminder.reminderId);
+          if (r) r.status = 'CONCLUIDO';
+          saveOperatorData();
+          if (selectedPatientId === p.id) renderRemindersList();
+        }
+        closeModal('popupReminderModal');
+      }
+    }
+
+    function openAddPatientModal() {
+      document.getElementById('addPatientForm').reset();
+      document.getElementById('addPatientModal').classList.remove('hidden');
+    }
+
+    function saveNewPatient(e) {
+      e.preventDefault();
+      const name = document.getElementById('newPatientName').value.trim().toUpperCase();
+      const card = document.getElementById('newPatientCard').value.trim();
+      const op = document.getElementById('newPatientOperadora').value;
+      const filial = document.getElementById('newPatientFilial').value.trim().toUpperCase();
+      const plano = document.getElementById('newPatientPlano').value.trim().toUpperCase();
+      const status = document.getElementById('newPatientStatus').value;
+      const telefone = document.getElementById('newPatientTelefone').value.trim();
+      const whatsapp = document.getElementById('newPatientWhatsapp').value.trim();
+      const email = document.getElementById('newPatientEmail').value.trim();
+      const obs = document.getElementById('newPatientObservacoes').value.trim();
+
+      const newP = {
+        id: 'p_' + Date.now(),
+        carteirinha: card,
+        nome: name,
+        filial: filial || 'SÃO PAULO - SP',
+        operadora: op,
+        plano: plano || 'PADRÃO',
+        statusUsuario: 'ATIVO',
+        statusBackoffice: status,
+        operador: currentOperator,
+        telefone: telefone,
+        whatsapp: whatsapp,
+        email: email,
+        observacoes: obs,
+        createdAt: new Date().toISOString(),
+        tags: [], consultas: [], exames: [], guias: [],
+        historico: [{ data: new Date().toLocaleString('pt-BR'), operador: currentOperator, detalhe: 'Caso cadastrado no sistema.' }],
+        lembretes: []
+      };
+
+      patients.unshift(newP);
+      saveOperatorData();
+      closeModal('addPatientModal');
+      selectPatient(newP.id);
+    }
+
+    function openEditPatientModal() {
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return;
+      document.getElementById('editPatientName').value = p.nome;
+      document.getElementById('editPatientCard').value = p.carteirinha;
+      document.getElementById('editPatientOperadora').value = p.operadora;
+      document.getElementById('editCitySearch').value = p.filial;
+      document.getElementById('editPatientFilial').value = p.filial;
+      document.getElementById('editPatientPlano').value = p.plano || '';
+      document.getElementById('editPatientTelefone').value = p.telefone || '';
+      document.getElementById('editPatientWhatsapp').value = p.whatsapp || '';
+      document.getElementById('editPatientEmail').value = p.email || '';
+      document.getElementById('editPatientObservacoes').value = p.observacoes || '';
+      document.getElementById('editPatientModal').classList.remove('hidden');
+    }
+
+    function saveEditedPatient(e) {
+      e.preventDefault();
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return;
+      p.nome = document.getElementById('editPatientName').value.trim().toUpperCase();
+      p.carteirinha = document.getElementById('editPatientCard').value.trim();
+      p.operadora = document.getElementById('editPatientOperadora').value;
+      p.filial = document.getElementById('editPatientFilial').value.trim().toUpperCase();
+      p.plano = document.getElementById('editPatientPlano').value.trim().toUpperCase();
+      p.telefone = document.getElementById('editPatientTelefone').value.trim();
+      p.whatsapp = document.getElementById('editPatientWhatsapp').value.trim();
+      p.email = document.getElementById('editPatientEmail').value.trim();
+      p.observacoes = document.getElementById('editPatientObservacoes').value.trim();
+
+      p.historico.unshift({ data: new Date().toLocaleString('pt-BR'), operador: currentOperator, detalhe: 'Ficha, contatos e observações atualizadas.' });
+      saveOperatorData();
+      closeModal('editPatientModal');
+      renderPatientDetails();
+      renderQueue();
+    }
+
+    function exportOperatorBackup() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ operator: currentOperator, base: currentBase, patients, logs: operatorLogs }, null, 2));
+      const a = document.createElement('a');
+      a.href = dataStr; a.download = `backup_base_${currentOperator}_${Date.now()}.json`;
+      a.click();
+    }
+
+    function triggerImportBackup() { document.getElementById('importJsonInput').click(); }
+
+    function importOperatorBackup(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          const imp = JSON.parse(ev.target.result);
+          if (imp.patients) {
+            patients = imp.patients;
+            if (imp.logs) operatorLogs = imp.logs;
+            saveOperatorData();
+            initDashboard();
+            alert('Backup importado com sucesso!');
+          }
+        } catch (err) { alert('Erro ao importar arquivo.'); }
+      };
+      reader.readAsText(file);
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+  </script>
+</body>
+</html>
